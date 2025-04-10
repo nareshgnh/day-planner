@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 
 // --- IMPORTANT SECURITY WARNING ---
-const GEMINI_API_KEY = "AIzaSyAEmti2S_0gQEnWFi4NeM0LM9DFcwPpugI"; // <-- USER'S API KEY (INSECURE!)
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const GEMINI_API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 // --- Action Constants ---
