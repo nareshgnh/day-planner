@@ -2,9 +2,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html", // Include your main HTML file
-    "./src/**/*.{js,ts,jsx,tsx}", // Include all JS/TS/JSX/TSX files in the src folder
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}", // Make sure this covers your project structure
   ],
+  darkMode: "class", // <-- Ensure this line is present and set to 'class'
   theme: {
     extend: {},
   },
