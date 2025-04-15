@@ -6374,7 +6374,8 @@ import {
 import { useDarkMode } from "./useDarkMode"; // Adjust path if needed
 
 // --- Hardcoded API Key ---
-const GEMINI_API_KEY = "AIzaSyDRSwIOzdttALUQtOXkPkhgTvG5w-oOxeU"; // Replace later
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
 console.warn(
   "Using hardcoded GEMINI_API_KEY for development. Replace before production!"
 );
