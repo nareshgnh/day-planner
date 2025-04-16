@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+src_content_structure.json
+backup_structure.json
+apply.json
+apply_changes.py
+create_json.py

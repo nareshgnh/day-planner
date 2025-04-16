@@ -1,4 +1,43 @@
 /* src/index.css */
+
+/* --- Styles for react-calendar-heatmap --- */
+.react-calendar-heatmap text {
+  font-size: 0.6em; /* Smaller font size for labels */
+  fill: #6b7280; /* Default text color (Tailwind gray-500) */
+}
+
+.dark .react-calendar-heatmap text {
+  fill: #9ca3af; /* Dark mode text color (Tailwind gray-400) */
+}
+
+.react-calendar-heatmap rect:hover {
+  stroke: #60a5fa; /* Tailwind blue-400 on hover */
+  stroke-width: 1px;
+}
+
+/* Color levels - match definitions in StatsPanel's getClassForValue */
+.react-calendar-heatmap .color-empty {
+  fill: #ebedf0; /* Light mode empty */
+}
+.react-calendar-heatmap .color-level-1 {
+  fill: #fecaca; /* Light mode failed/red-200 */
+}
+.react-calendar-heatmap .color-level-2 {
+  fill: #a7f3d0; /* Light mode success/green-200 */
+}
+
+.dark .react-calendar-heatmap .color-empty {
+  fill: #374151; /* Dark mode empty (gray-700) */
+}
+.dark .react-calendar-heatmap .color-level-1 {
+  fill: #7f1d1d; /* Dark mode failed/red-900 */
+}
+.dark .react-calendar-heatmap .color-level-2 {
+  fill: #064e3b; /* Dark mode success/green-900 */
+}
+/* -- End react-calendar-heatmap styles -- */
+
+/* --- Tailwind Directives --- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
