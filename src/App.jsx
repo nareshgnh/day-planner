@@ -8,7 +8,7 @@ import React, {
 } from "react";
 
 // Firebase Imports
-import { db } from "./firebaseConfig"; // Adjust path if needed
+import { db } from "./firebaseConfig";
 import {
   collection,
   query,
@@ -23,10 +23,10 @@ import {
 } from "firebase/firestore";
 
 // Hooks
-import { useDarkMode } from "./hooks/useDarkMode"; // Adjust path if needed
+import { useDarkMode } from "./hooks/useDarkMode";
 
 // Components
-import { Header } from "./components/Header"; // Adjust path if needed
+import { Header } from "./components/Header";
 import { HabitList } from "./components/HabitList";
 import { HabitModal } from "./components/HabitModal";
 import { ChatPanel } from "./components/ChatPanel";
@@ -51,7 +51,6 @@ import { MessageSquare, Bell } from "lucide-react";
 // --- Firestore Collection References ---
 const habitsCollectionRef = collection(db, "habits");
 const habitLogCollectionRef = collection(db, "habitLog");
-// ---
 
 // --- Initial State for Habit Modal ---
 const initialHabitModalData = {
@@ -91,15 +90,13 @@ function App() {
   const [focusChatInput, setFocusChatInput] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
-  const [notificationPermission, setNotificationPermission] =
-    useState("default");
+  const [notificationPermission, setNotificationPermission] = useState("default");
   const lastNotificationTime = useRef(0);
   const [motivationalMessage, setMotivationalMessage] = useState("");
   const [isMotivationLoading, setIsMotivationLoading] = useState(true);
   const previousTodaysLogRef = useRef(null);
 
   // --- Effects ---
-  // Load Habits and Logs from Firestore
   useEffect(() => {
     console.log("Setting up Firestore listeners...");
     setIsLoadingData(true);
@@ -139,6 +136,7 @@ function App() {
       unL();
     };
   }, []);
+
   // Check Notification Permission on Load
   useEffect(() => {
     if ("Notification" in window)
@@ -150,7 +148,7 @@ function App() {
   }, []);
 
   // --- Notification Logic ---
-  const requestNotificationPermission = async () => {
+  const requestNotificationPermission = useCallback(async () => {
     if (!("Notification" in window)) {
       alert("Notifications not supported.");
       setNotificationPermission("denied");
@@ -169,7 +167,8 @@ function App() {
         icon: "/vite.svg",
       });
     else alert("Notifications denied.");
-  };
+  }, [notificationPermission]);
+
   const showReminderNotification = useCallback(
     (title, body) => {
       if (notificationPermission !== "granted") return;
@@ -191,6 +190,7 @@ function App() {
     },
     [notificationPermission]
   );
+
   // Effect for Timed Reminder Check
   useEffect(() => {
     const checkNotify = () => {
@@ -239,24 +239,20 @@ function App() {
         isHabitScheduledForDate(habit, today)
       );
 
-      // *** ADDED: Determine Time Period ***
       const currentHour = today.getHours();
-      let timePeriod = "Evening"; // Default
+      let timePeriod = "Evening";
       if (currentHour < 12) {
         timePeriod = "Morning";
       } else if (currentHour < 18) {
         timePeriod = "Afternoon";
       }
-      // *** END ADDED ***
 
       if (activeToday.length > 0) {
-        // *** UPDATED: Pass timePeriod to fetchDailyMotivation ***
         const msg = await fetchDailyMotivation(
           activeToday,
           todaysLog,
           timePeriod
         );
-        // *** END UPDATED ***
         setMotivationalMessage(msg);
       } else {
         setMotivationalMessage("No habits scheduled today. Ready to plan?");
@@ -267,8 +263,8 @@ function App() {
     } finally {
       setIsMotivationLoading(false);
     }
-    // *** UPDATED: Add timePeriod dependencies if needed (though Date() changes anyway) ***
   }, [habits, habitLog, isLoadingData]);
+
   // --- Effect to trigger AI Motivation Load ---
   useEffect(() => {
     if (!isLoadingData) {
@@ -292,46 +288,46 @@ function App() {
     const habitDocRef = doc(db, "habits", habitId);
     const isMeasurable = habitDataToSave.isMeasurable || false;
     const scheduleType = habitDataToSave.scheduleType || "daily";
-    const trimmedCategory = habitDataToSave.category?.trim() || null; // Keep category logic, just removed from UI for now
+    const trimmedCategory = habitDataToSave.category?.trim() || null;
 
     const newHabitData = {
-      title: (habitDataToSave.title || "").trim(), // Normal quotes
-      type: habitDataToSave.type === "bad" ? "bad" : "good", // Normal quotes
+      title: (habitDataToSave.title || "").trim(),
+      type: habitDataToSave.type === "bad" ? "bad" : "good",
       startDate: habitDataToSave.startDate || formatDate(new Date()),
       endDate: habitDataToSave.endDate || null,
-      category: trimmedCategory, // Keep saving category
+      category: trimmedCategory,
       isMeasurable: isMeasurable,
-      unit: isMeasurable ? (habitDataToSave.unit || "").trim() : deleteField(), // Normal quotes
+      unit: isMeasurable ? (habitDataToSave.unit || "").trim() : deleteField(),
       goal: isMeasurable ? habitDataToSave.goal || null : deleteField(),
-      scheduleType: scheduleType === "daily" ? deleteField() : scheduleType, // Normal quotes
+      scheduleType: scheduleType === "daily" ? deleteField() : scheduleType,
       scheduleDays:
         scheduleType === "specific_days"
           ? (habitDataToSave.scheduleDays || []).sort((a, b) => a - b)
-          : deleteField(), // Normal quotes
+          : deleteField(),
       scheduleFrequency:
         scheduleType === "frequency_weekly"
           ? habitDataToSave.scheduleFrequency || null
-          : deleteField(), // Normal quotes
+          : deleteField(),
     };
 
     // Validation
     if (!newHabitData.title) {
       alert("Habit title required.");
       return false;
-    } // Normal quotes
+    }
     const startD = parseDate(newHabitData.startDate);
     const endD = newHabitData.endDate ? parseDate(newHabitData.endDate) : null;
     if (!startD || (newHabitData.endDate && !endD) || (endD && startD > endD)) {
       alert("Invalid date range.");
       return false;
-    } // Normal quotes
+    }
     if (
       scheduleType === "specific_days" &&
       (!newHabitData.scheduleDays || newHabitData.scheduleDays.length === 0)
     ) {
       alert("Select days for 'Specific Days'.");
       return false;
-    } // Normal quotes
+    }
     if (
       scheduleType === "frequency_weekly" &&
       (newHabitData.scheduleFrequency === null ||
@@ -339,14 +335,14 @@ function App() {
     ) {
       alert("Enter valid frequency.");
       return false;
-    } // Normal quotes
+    }
     if (isMeasurable && newHabitData.unit === undefined) {
       if (!habitDataToSave.unit || !habitDataToSave.unit.trim()) {
         alert("Unit required for measurable habits.");
         return false;
       }
       newHabitData.unit = habitDataToSave.unit.trim();
-    } // Normal quotes
+    }
     if (
       isMeasurable &&
       (newHabitData.goal === null ||
@@ -362,7 +358,7 @@ function App() {
         return false;
       }
       newHabitData.goal = habitDataToSave.goal;
-    } // Normal quotes
+    }
 
     // Final cleanup
     const finalHabitData = Object.entries(newHabitData).reduce(
@@ -383,20 +379,20 @@ function App() {
       console.error("Error saving habit:", error);
       alert("Failed to save habit.");
       return false;
-    } // Normal quotes
+    }
   }, []);
 
   const handleDeleteHabitCallback = useCallback(
     async (id) => {
       if (!id) return;
       const t = habits.find((h) => h.id === id)?.title || id;
-      const dR = doc(db, "habits", id); // Normal quotes
+      const dR = doc(db, "habits", id);
       try {
         await deleteDoc(dR);
         if (selectedHabitIdForStats === id) setSelectedHabitIdForStats(null);
       } catch (e) {
         console.error(e);
-        alert("Failed delete"); // Normal quotes
+        alert("Failed delete");
       }
     },
     [habits, selectedHabitIdForStats]
@@ -414,7 +410,7 @@ function App() {
         });
         return;
       }
-      const logDocRef = doc(db, "habitLog", dateStr); // Normal quotes
+      const logDocRef = doc(db, "habitLog", dateStr);
       const logData = { [habitId]: value };
 
       console.log(`[updateHabitLog] Args:`, { habitId, dateStr, value });
@@ -436,9 +432,8 @@ function App() {
             (value === null || value === undefined)
           )
         ) {
-          // Normal quotes
           console.error("[updateHabitLog] Error updating document:", error);
-          alert("Failed to update habit log. Check console."); // Normal quotes
+          alert("Failed to update habit log. Check console.");
         } else {
           console.log(
             "[updateHabitLog] Doc/Field not found on delete, likely already deleted."
@@ -446,8 +441,8 @@ function App() {
         }
       }
     },
-    [db]
-  ); // Added db dependency
+    []
+  );
 
   const findHabitIdByTitle = useCallback(
     (title) => {
@@ -466,6 +461,7 @@ function App() {
     setHabitModalData(initialHabitModalData);
     setIsHabitModalOpen(true);
   }, []);
+
   const openModalForEditHabit = useCallback((habit) => {
     setEditingHabit(habit);
     setHabitModalData({
@@ -482,12 +478,14 @@ function App() {
       category: habit.category || "",
     });
     setIsHabitModalOpen(true);
-  }, []); // Kept category loading here for data consistency, though UI is removed
+  }, []);
+
   const closeHabitModal = useCallback(() => {
     setIsHabitModalOpen(false);
     setEditingHabit(null);
     setHabitModalData(initialHabitModalData);
   }, []);
+
   const handleHabitModalSave = useCallback(async () => {
     const success = await upsertHabit({
       id: editingHabit?.id,
@@ -501,6 +499,7 @@ function App() {
     setIsChatOpen((p) => !p);
     if (!isChatOpen) setTimeout(() => setFocusChatInput(true), 350);
   }, [isChatOpen]);
+
   const handleSendChatMessage = useCallback(async () => {
     const msgTxt = chatInput.trim();
     const lowerMsg = msgTxt.toLowerCase();
@@ -508,7 +507,7 @@ function App() {
     if (isChatLoading && !awaitingConfirmation) return;
     const userMsg = { sender: "user", text: msgTxt };
     setChatHistory((p) => [...p, userMsg]);
-    setChatInput(""); // Normal quotes
+    setChatInput("");
     if (awaitingConfirmation && pendingActionData) {
       try {
         const c = lowerMsg;
@@ -585,7 +584,7 @@ function App() {
           setTimeout(() => setFocusChatInput(true), 0);
       }
       return;
-    } // Normal quotes
+    }
     setIsChatLoading(true);
     try {
       const cH = [...chatHistory];
@@ -738,7 +737,7 @@ function App() {
             cM = `Nice to meet you, ${fN}!`;
           }
         }
-      } // Normal quotes
+      }
       if (rC && aD?.confirmationPrompt) {
         setPendingActionData(aD);
         setAwaitingConfirmation(true);
@@ -788,7 +787,8 @@ function App() {
 
   // --- Voice Input Logic ---
   const setupSpeechRecognition = useCallback(() => {
-    const SRA = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SRA = window.Spe
+echRecognition || window.webkitSpeechRecognition;
     if (!SRA) return;
     const r = new SRA();
     r.continuous = false;
@@ -821,13 +821,15 @@ function App() {
     };
     recognitionRef.current = r;
   }, [setChatHistory, setChatInput]);
+
   useEffect(() => {
     setupSpeechRecognition();
     return () => {
       recognitionRef.current?.abort();
     };
   }, [setupSpeechRecognition]);
-  const handleMicClick = () => {
+
+  const handleMicClick = useCallback(() => {
     if (!recognitionRef.current) {
       setChatHistory((p) => [
         ...p,
@@ -856,7 +858,7 @@ function App() {
           setIsListening(false);
         });
     }
-  };
+  }, [isListening, setChatHistory, setChatInput]);
 
   // --- Calendar Tile Styling Callback ---
   const getTileClassName = useCallback(
@@ -911,6 +913,7 @@ function App() {
   const handleSelectHabitForStats = useCallback((id) => {
     setSelectedHabitIdForStats((p) => (p === id ? null : id));
   }, []);
+
   const selectedHabitObject = useMemo(
     () =>
       !selectedHabitIdForStats
@@ -945,7 +948,6 @@ function App() {
         requestNotificationPermission={requestNotificationPermission}
       />
 
-      {/* *** Adjusted gap-2 md:gap-4 for tighter spacing *** */}
       <main className="flex-grow container mx-auto px-2 sm:px-4 py-2 md:py-4 flex flex-col gap-2 md:gap-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent pb-24">
         {isLoadingData && (
           <div className="fixed inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-50">
@@ -970,8 +972,6 @@ function App() {
 
         {/* Habit List & Stats Panel Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {" "}
-          {/* Keep internal grid gap */}
           <div
             className={`space-y-4 md:space-y-6 flex flex-col ${
               selectedHabitObject ? "lg:col-span-2" : "lg:col-span-3"
@@ -982,7 +982,6 @@ function App() {
               habitLog={habitLog}
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
-              // *** CORRECTED Prop Name Passed Down ***
               updateHabitLog={updateHabitLog}
               openModalForEditHabit={openModalForEditHabit}
               handleDeleteHabitCallback={handleDeleteHabitCallback}
