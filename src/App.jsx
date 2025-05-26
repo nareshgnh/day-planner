@@ -6,6 +6,12 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  NavLink,
+} from "react-router-dom";
 
 // Firebase Imports
 import { db } from "./firebaseConfig";
@@ -20,6 +26,7 @@ import {
   updateDoc,
   deleteField,
   getDocs,
+  writeBatch,
 } from "firebase/firestore";
 
 // Hooks
@@ -27,13 +34,15 @@ import { useDarkMode } from "./hooks/useDarkMode";
 
 // Components
 import { Header } from "./components/Header";
-import { HabitList } from "./components/HabitList";
 import { HabitModal } from "./components/HabitModal";
 import { ChatPanel } from "./components/ChatPanel";
-import { StatsPanel } from "./components/StatsPanel";
-import { GlobalStatsDashboard } from "./components/GlobalStatsDashboard";
-import { AiMotivationalMessage } from "./components/AiMotivationalMessage";
 import { Button } from "./ui/Button";
+
+// Pages
+import DashboardPage from "./pages/DashboardPage";
+import ManageHabitsPage from "./pages/ManageHabitsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import SettingsPage from "./pages/SettingsPage";
 
 // Utils & Constants
 import {
@@ -41,18 +50,23 @@ import {
   parseDate,
   isHabitScheduledForDate,
 } from "./utils/helpers";
-import { fetchChatResponse, fetchDailyMotivation } from "./utils/api";
-import { calculateGlobalStats } from "./utils/stats";
+import { fetchChatResponse } from "./utils/api";
 import * as Actions from "./constants";
 
 // Icons
-import { MessageSquare, Bell } from "lucide-react";
+import {
+  MessageSquare,
+  LayoutDashboard,
+  ListChecks,
+  LineChart,
+  Settings as SettingsIcon,
+  Menu,
+  X as CloseIcon,
+} from "lucide-react";
 
-// --- Firestore Collection References ---
 const habitsCollectionRef = collection(db, "habits");
 const habitLogCollectionRef = collection(db, "habitLog");
 
-// --- Initial State for Habit Modal ---
 const initialHabitModalData = {
   title: "",
   type: "good",
@@ -67,13 +81,10 @@ const initialHabitModalData = {
   category: "",
 };
 
-// --- Main App Component ---
 function App() {
-  // --- State Definitions ---
   const [isDarkMode, toggleDarkMode] = useDarkMode();
   const [habits, setHabits] = useState([]);
   const [habitLog, setHabitLog] = useState({});
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState(null);
   const [habitModalData, setHabitModalData] = useState(initialHabitModalData);
@@ -89,16 +100,11 @@ function App() {
   const chatInputRef = useRef(null);
   const [focusChatInput, setFocusChatInput] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
-  const [notificationPermission, setNotificationPermission] = useState("default");
-  const lastNotificationTime = useRef(0);
-  const [motivationalMessage, setMotivationalMessage] = useState("");
-  const [isMotivationLoading, setIsMotivationLoading] = useState(true);
-  const previousTodaysLogRef = useRef(null);
+  const [notificationPermission, setNotificationPermission] =
+    useState("default");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // --- Effects ---
   useEffect(() => {
-    console.log("Setting up Firestore listeners...");
     setIsLoadingData(true);
     let isInitial = true;
     const qH = query(habitsCollectionRef, orderBy("title"));
@@ -122,14 +128,10 @@ function App() {
       qL,
       (qs) => {
         const d = {};
-        qs.forEach((doc) => {
-          d[doc.id] = doc.data();
-        });
+        qs.forEach((doc) => (d[doc.id] = doc.data()));
         setHabitLog(d);
       },
-      (e) => {
-        console.error("Logs listener err:", e);
-      }
+      (e) => console.error("Logs listener err:", e)
     );
     return () => {
       unH();
@@ -137,7 +139,6 @@ function App() {
     };
   }, []);
 
-  // Check Notification Permission on Load
   useEffect(() => {
     if ("Notification" in window)
       setNotificationPermission(Notification.permission);
@@ -147,7 +148,6 @@ function App() {
     }
   }, []);
 
-  // --- Notification Logic ---
   const requestNotificationPermission = useCallback(async () => {
     if (!("Notification" in window)) {
       alert("Notifications not supported.");
@@ -169,118 +169,6 @@ function App() {
     else alert("Notifications denied.");
   }, [notificationPermission]);
 
-  const showReminderNotification = useCallback(
-    (title, body) => {
-      if (notificationPermission !== "granted") return;
-      const n = Date.now();
-      if (n - lastNotificationTime.current < 1800000) return;
-      lastNotificationTime.current = n;
-      const o = {
-        body: body,
-        icon: "/vite.svg",
-        tag: "habit-reminder",
-        renotify: true,
-      };
-      try {
-        const nt = new Notification(title, o);
-        nt.onclick = () => window.focus();
-      } catch (e) {
-        console.error("Notif err:", e);
-      }
-    },
-    [notificationPermission]
-  );
-
-  // Effect for Timed Reminder Check
-  useEffect(() => {
-    const checkNotify = () => {
-      if (
-        isLoadingData ||
-        habits.length === 0 ||
-        notificationPermission !== "granted"
-      )
-        return;
-      const now = new Date();
-      const h = now.getHours();
-      if (h >= 18 && h < 22) {
-        const todayStr = formatDate(now);
-        const logT = habitLog[todayStr] || {};
-        const activeT = habits.filter((hb) => isHabitScheduledForDate(hb, now));
-        const pending = activeT.filter(
-          (hb) => logT[hb.id] === undefined
-        ).length;
-        if (pending > 0)
-          showReminderNotification(
-            "Reminder",
-            `You have ${pending} habit(s) pending today.`
-          );
-      }
-    };
-    const intId = setInterval(checkNotify, 1800000);
-    return () => clearInterval(intId);
-  }, [
-    habits,
-    habitLog,
-    isLoadingData,
-    notificationPermission,
-    showReminderNotification,
-  ]);
-
-  // --- Function to load AI Motivation ---
-  const loadDailyMotivation = useCallback(async () => {
-    if (isLoadingData || !habits || habits.length === 0) return;
-    console.log("Attempting loading daily motivation...");
-    setIsMotivationLoading(true);
-    try {
-      const today = new Date();
-      const todayStr = formatDate(today);
-      const todaysLog = habitLog[todayStr] || {};
-      const activeToday = habits.filter((habit) =>
-        isHabitScheduledForDate(habit, today)
-      );
-
-      const currentHour = today.getHours();
-      let timePeriod = "Evening";
-      if (currentHour < 12) {
-        timePeriod = "Morning";
-      } else if (currentHour < 18) {
-        timePeriod = "Afternoon";
-      }
-
-      if (activeToday.length > 0) {
-        const msg = await fetchDailyMotivation(
-          activeToday,
-          todaysLog,
-          timePeriod
-        );
-        setMotivationalMessage(msg);
-      } else {
-        setMotivationalMessage("No habits scheduled today. Ready to plan?");
-      }
-    } catch (e) {
-      console.error(e);
-      setMotivationalMessage("Could not load insight.");
-    } finally {
-      setIsMotivationLoading(false);
-    }
-  }, [habits, habitLog, isLoadingData]);
-
-  // --- Effect to trigger AI Motivation Load ---
-  useEffect(() => {
-    if (!isLoadingData) {
-      const todayStr = formatDate(new Date());
-      const currentLogJSON = JSON.stringify(habitLog[todayStr] || {});
-      if (previousTodaysLogRef.current !== currentLogJSON) {
-        console.log("Triggering motivation load.");
-        loadDailyMotivation();
-        previousTodaysLogRef.current = currentLogJSON;
-      }
-    } else {
-      previousTodaysLogRef.current = null;
-    }
-  }, [isLoadingData, habitLog, loadDailyMotivation]);
-
-  // --- Core Logic Callbacks ---
   const upsertHabit = useCallback(async (habitDataToSave) => {
     const habitId =
       habitDataToSave.id ||
@@ -310,7 +198,6 @@ function App() {
           : deleteField(),
     };
 
-    // Validation
     if (!newHabitData.title) {
       alert("Habit title required.");
       return false;
@@ -360,19 +247,15 @@ function App() {
       newHabitData.goal = habitDataToSave.goal;
     }
 
-    // Final cleanup
     const finalHabitData = Object.entries(newHabitData).reduce(
       (acc, [key, value]) => {
-        if (value !== undefined) {
-          acc[key] = value;
-        }
+        if (value !== undefined) acc[key] = value;
         return acc;
       },
       {}
     );
 
     try {
-      console.log("Saving habit:", habitId, finalHabitData);
       await setDoc(habitDocRef, finalHabitData, { merge: true });
       return true;
     } catch (error) {
@@ -382,67 +265,42 @@ function App() {
     }
   }, []);
 
-  const handleDeleteHabitCallback = useCallback(
-    async (id) => {
-      if (!id) return;
-      const t = habits.find((h) => h.id === id)?.title || id;
-      const dR = doc(db, "habits", id);
-      try {
-        await deleteDoc(dR);
-        if (selectedHabitIdForStats === id) setSelectedHabitIdForStats(null);
-      } catch (e) {
-        console.error(e);
-        alert("Failed delete");
-      }
-    },
-    [habits, selectedHabitIdForStats]
-  );
+  const handleDeleteHabitCallback = useCallback(async (id) => {
+    if (!id) return;
+    const dR = doc(db, "habits", id);
+    try {
+      await deleteDoc(dR);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to delete habit.");
+    }
+  }, []);
 
-  // Renamed and SIMPLIFIED Logging Function
-  const updateHabitLog = useCallback(
-    async (habitId, date, value) => {
-      const dateStr = formatDate(date);
-      if (!dateStr || !habitId) {
-        console.error("Invalid args for updateHabitLog", {
-          habitId,
-          dateStr,
-          value,
-        });
-        return;
+  const updateHabitLog = useCallback(async (habitId, date, value) => {
+    const dateStr = formatDate(date);
+    if (!dateStr || !habitId) {
+      console.error("Invalid args for updateHabitLog", {
+        habitId,
+        dateStr,
+        value,
+      });
+      return;
+    }
+    const logDocRef = doc(db, "habitLog", dateStr);
+    const logData = { [habitId]: value };
+    try {
+      if (value === null || value === undefined)
+        await updateDoc(logDocRef, { [habitId]: deleteField() });
+      else await setDoc(logDocRef, logData, { merge: true });
+    } catch (error) {
+      if (
+        !(error.code === "not-found" && (value === null || value === undefined))
+      ) {
+        console.error("[updateHabitLog] Error:", error);
+        alert("Failed to update habit log.");
       }
-      const logDocRef = doc(db, "habitLog", dateStr);
-      const logData = { [habitId]: value };
-
-      console.log(`[updateHabitLog] Args:`, { habitId, dateStr, value });
-
-      try {
-        if (value === null || value === undefined) {
-          console.log(`[updateHabitLog] Deleting field ${habitId}`);
-          await updateDoc(logDocRef, { [habitId]: deleteField() });
-          console.log(`[updateHabitLog] Success: Deleted field ${habitId}`);
-        } else {
-          console.log(`[updateHabitLog] Setting field ${habitId} to`, value);
-          await setDoc(logDocRef, logData, { merge: true });
-          console.log(`[updateHabitLog] Success: Set/Merged field ${habitId}`);
-        }
-      } catch (error) {
-        if (
-          !(
-            error.code === "not-found" &&
-            (value === null || value === undefined)
-          )
-        ) {
-          console.error("[updateHabitLog] Error updating document:", error);
-          alert("Failed to update habit log. Check console.");
-        } else {
-          console.log(
-            "[updateHabitLog] Doc/Field not found on delete, likely already deleted."
-          );
-        }
-      }
-    },
-    []
-  );
+    }
+  }, []);
 
   const findHabitIdByTitle = useCallback(
     (title) => {
@@ -455,7 +313,6 @@ function App() {
     [habits]
   );
 
-  // --- Modal Handling Callbacks ---
   const openModalForNewHabit = useCallback(() => {
     setEditingHabit(null);
     setHabitModalData(initialHabitModalData);
@@ -487,14 +344,23 @@ function App() {
   }, []);
 
   const handleHabitModalSave = useCallback(async () => {
+    console.log("[App.jsx] Attempting to save habit:", habitModalData);
     const success = await upsertHabit({
       id: editingHabit?.id,
       ...habitModalData,
     });
-    if (success) closeHabitModal();
+    console.log(
+      "[App.jsx] Upsert success:",
+      success,
+      "- Calling closeHabitModal."
+    );
+    if (success) {
+      closeHabitModal();
+    } else {
+      console.log("[App.jsx] Upsert failed, modal will not close.");
+    }
   }, [upsertHabit, editingHabit, habitModalData, closeHabitModal]);
 
-  // --- Chat Handling Callbacks ---
   const toggleChat = useCallback(() => {
     setIsChatOpen((p) => !p);
     if (!isChatOpen) setTimeout(() => setFocusChatInput(true), 350);
@@ -531,19 +397,26 @@ function App() {
                 const rs = await Promise.all(
                   pendingActionData.habits?.map((h) => upsertHabit(h)) || []
                 );
-                r = `Added ${rs.filter((s) => s).length}.`;
+                r = `Added ${rs.filter((s) => s).length} suggested habits.`;
                 break;
               case Actions.ACTION_DELETE_ALL_HABITS:
                 try {
                   const q = query(habitsCollectionRef);
                   const qs = await getDocs(q);
-                  await Promise.all(qs.docs.map((d) => deleteDoc(d.ref)));
+                  const batch = writeBatch(db);
+                  qs.docs.forEach((docSnapshot) =>
+                    batch.delete(docSnapshot.ref)
+                  );
+                  const logDocsSnapshot = await getDocs(
+                    collection(db, "habitLog")
+                  );
+                  logDocsSnapshot.forEach((logDoc) => batch.delete(logDoc.ref));
+                  await batch.commit();
                   setHabits([]);
                   setHabitLog({});
-                  setSelectedHabitIdForStats(null);
-                  r = `Deleted ${qs.size}.`;
+                  r = `Deleted all ${qs.size} habits and their logs.`;
                 } catch (e) {
-                  r = "Err deleting all.";
+                  r = "Error deleting all habits.";
                   console.error(e);
                 }
                 break;
@@ -556,18 +429,21 @@ function App() {
                   await Promise.all(
                     aNM.map((h) => updateHabitLog(h.id, t, true))
                   );
-                  r = `Marked ${aNM.length} non-measurable today.`;
-                } else r = "No non-measurable scheduled.";
+                  r = `Marked ${aNM.length} non-measurable habits as done for today.`;
+                } else r = "No non-measurable habits scheduled for today.";
                 break;
               default:
-                r = "Confirmed (unknown).";
+                r = "Confirmed (unknown action).";
             }
           } catch (e) {
-            r = "Error performing action.";
+            r = "Error performing confirmed action.";
             console.error(e);
           }
         }
-        if (r) setChatHistory((p) => [...p, { sender: "bot", text: r }]);
+        if (r) {
+          console.log("[App.jsx] AI Confirmation/Action Response:", r);
+          setChatHistory((p) => [...p, { sender: "bot", text: r }]);
+        }
         if (d || c === "no" || c === "n") {
           setPendingActionData(null);
           setAwaitingConfirmation(false);
@@ -576,7 +452,10 @@ function App() {
         }
       } catch (e) {
         console.error(e);
-        setChatHistory((p) => [...p, { sender: "bot", text: "Confirm err." }]);
+        setChatHistory((p) => [
+          ...p,
+          { sender: "bot", text: "Confirmation processing error." },
+        ]);
         setPendingActionData(null);
         setAwaitingConfirmation(false);
       } finally {
@@ -599,15 +478,16 @@ function App() {
       let cP = "";
       let cM = "";
       let aD = null;
-      if (!bR || (!bR.action && !bR.text)) {
-        cM = "Invalid AI response.";
-      } else if (bR.action && bR.action !== Actions.ACTION_GENERAL_CHAT) {
+      if (!bR || (!bR.action && !bR.text)) cM = "Invalid AI response.";
+      else if (bR.action && bR.action !== Actions.ACTION_GENERAL_CHAT) {
         aD = { ...bR };
         try {
           switch (bR.action) {
             case Actions.ACTION_ADD_HABIT:
               const added = await upsertHabit(bR);
-              cM = added ? `Added "${bR.title}".` : `Could not add.`;
+              cM = added
+                ? `Added habit: "${bR.title}".`
+                : `Could not add habit.`;
               break;
             case Actions.ACTION_BATCH_ACTIONS:
               if (Array.isArray(bR.actions)) {
@@ -629,11 +509,15 @@ function App() {
                   })
                 );
                 let ms = [];
-                if (ad > 0) ms.push(`Added ${ad}.`);
-                if (du.length > 0) ms.push(`Duplicates: ${du.join(", ")}.`);
-                if (fa.length > 0) ms.push(`Failed: ${fa.join(", ")}.`);
-                cM = ms.length > 0 ? ms.join(" ") : "Batch fail.";
-              } else cM = "Invalid batch.";
+                if (ad > 0) ms.push(`Added ${ad} habits.`);
+                if (du.length > 0)
+                  ms.push(`Duplicate habits not added: ${du.join(", ")}.`);
+                if (fa.length > 0) ms.push(`Failed to add: ${fa.join(", ")}.`);
+                cM =
+                  ms.length > 0
+                    ? ms.join(" ")
+                    : "Batch action failed or no valid actions.";
+              } else cM = "Invalid batch actions format.";
               break;
             case Actions.ACTION_DELETE_HABIT:
               const idDel = findHabitIdByTitle(bR.title);
@@ -643,10 +527,10 @@ function App() {
                   ...aD,
                   habitIds: [idDel],
                   title: bR.title,
-                  confirmationPrompt: `Delete "${bR.title}"? (y/n)`,
+                  confirmationPrompt: `Are you sure you want to delete the habit "${bR.title}"? (yes/no)`,
                 };
                 cP = aD.confirmationPrompt;
-              } else cM = `Cannot find "${bR.title}".`;
+              } else cM = `Habit "${bR.title}" not found.`;
               break;
             case Actions.ACTION_COMPLETE_HABIT_DATE:
               const idL = findHabitIdByTitle(bR.title);
@@ -655,9 +539,9 @@ function App() {
               const dL = parseDate(dSL);
               const hTL = habits.find((h) => h.id === idL);
               if (idL && dL && typeof sL === "boolean") {
-                if (hTL?.isMeasurable) {
-                  cM = `Cannot mark measurable "${bR.title}" via chat.`;
-                } else {
+                if (hTL?.isMeasurable)
+                  cM = `Cannot mark measurable habit "${bR.title}" as simply done/missed via chat. Please log its value directly.`;
+                else {
                   await updateHabitLog(idL, dL, sL);
                   const sTxt = sL
                     ? hTL?.type === "bad"
@@ -666,9 +550,10 @@ function App() {
                     : hTL?.type === "bad"
                     ? "indulged"
                     : "missed";
-                  cM = `Marked "${bR.title}" ${sTxt} for ${dSL}.`;
+                  cM = `Marked "${bR.title}" as ${sTxt} for ${dSL}.`;
                 }
-              } else cM = `Cannot log "${bR.title}".`;
+              } else
+                cM = `Could not log habit "${bR.title}". Please ensure title, date, and status are correct.`;
               break;
             case Actions.ACTION_SUGGEST_HABITS:
               if (Array.isArray(bR.habits) && bR.habits.length > 0) {
@@ -679,21 +564,21 @@ function App() {
                   aD = {
                     ...aD,
                     habits: vS,
-                    confirmationPrompt: `Add suggested: ${ts}? (y/n)`,
+                    confirmationPrompt: `Would you like to add these suggested habits: ${ts}? (yes/no)`,
                   };
                   cP = aD.confirmationPrompt;
-                } else cM = "Invalid suggestions.";
-              } else cM = "Cannot suggest.";
+                } else cM = "AI suggested invalid habits.";
+              } else cM = "AI could not suggest habits at this time.";
               break;
             case Actions.ACTION_DELETE_ALL_HABITS:
               if (habits.length > 0) {
                 rC = true;
                 aD = {
                   ...aD,
-                  confirmationPrompt: `Delete all ${habits.length}? (y/n)`,
+                  confirmationPrompt: `Are you sure you want to delete all ${habits.length} habits? This action cannot be undone. (yes/no)`,
                 };
                 cP = aD.confirmationPrompt;
-              } else cM = "No habits.";
+              } else cM = "There are no habits to delete.";
               break;
             case Actions.ACTION_COMPLETE_ALL_HABITS_TODAY:
               const tCAT = new Date();
@@ -704,22 +589,22 @@ function App() {
                 rC = true;
                 aD = {
                   ...aD,
-                  confirmationPrompt: `Mark all ${aNM.length} non-measurable today? (y/n)`,
+                  confirmationPrompt: `Mark all ${aNM.length} non-measurable habits scheduled for today as done/avoided? (yes/no)`,
                 };
                 cP = aD.confirmationPrompt;
-              } else cM = "No non-measurable scheduled.";
+              } else cM = "No non-measurable habits are scheduled for today.";
               break;
             default:
-              cM = "Unknown action.";
-              console.warn(bR.action);
+              cM = "Unknown action received from AI.";
+              console.warn("Unknown AI Action:", bR.action);
           }
         } catch (e) {
-          console.error(e);
-          cM = "Err process action.";
+          console.error("Error processing AI action:", e);
+          cM = "Error processing AI action.";
           rC = false;
         }
       } else {
-        cM = bR.text || "No understand.";
+        cM = bR.text || "I'm not sure how to respond to that.";
         const nk = ["my name is ", "i'm ", "im ", "call me "];
         const kf = nk.find((kw) => lowerMsg.startsWith(kw));
         if (kf) {
@@ -734,7 +619,7 @@ function App() {
               .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
               .join(" ");
             setUserName(fN);
-            cM = `Nice to meet you, ${fN}!`;
+            cM = `Nice to meet you, ${fN}! How can I help with your habits?`;
           }
         }
       }
@@ -746,16 +631,32 @@ function App() {
         setPendingActionData(null);
         setAwaitingConfirmation(false);
       }
-      if (cM) setChatHistory((p) => [...p, { sender: "bot", text: cM }]);
-      else if (!rC) {
-        console.warn("No msg:", bR);
-        setChatHistory((p) => [...p, { sender: "bot", text: "Processed." }]);
+
+      if (cM) {
+        console.log("[App.jsx] Bot message to add to chat:", cM);
+        setChatHistory((p) => [...p, { sender: "bot", text: cM }]);
+      } else if (!rC) {
+        console.warn(
+          "[App.jsx] No message (cM empty) from AI or action processing issue (handleSendChatMessage):",
+          bR
+        );
+        setChatHistory((p) => [
+          ...p,
+          { sender: "bot", text: "Action processed or an issue occurred." },
+        ]);
       }
+
       const fw = ["bye", "goodbye", "exit", "close chat", "close"];
       if (fw.includes(lowerMsg)) setTimeout(toggleChat, 1000);
     } catch (e) {
-      console.error(e);
-      setChatHistory((p) => [...p, { sender: "bot", text: "Crit err." }]);
+      console.error("Critical error in chat handling:", e);
+      setChatHistory((p) => [
+        ...p,
+        {
+          sender: "bot",
+          text: "A critical error occurred with the AI assistant.",
+        },
+      ]);
       setPendingActionData(null);
       setAwaitingConfirmation(false);
     } finally {
@@ -785,10 +686,8 @@ function App() {
     setChatInput,
   ]);
 
-  // --- Voice Input Logic ---
   const setupSpeechRecognition = useCallback(() => {
-    const SRA = window.Spe
-echRecognition || window.webkitSpeechRecognition;
+    const SRA = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SRA) return;
     const r = new SRA();
     r.continuous = false;
@@ -806,10 +705,11 @@ echRecognition || window.webkitSpeechRecognition;
       console.error("Speech err:", e.error);
       let m = `Speech err: ${e.error}`;
       if (e.error === "not-allowed" || e.error === "service-not-allowed")
-        m = "Mic denied.";
-      else if (e.error === "no-speech") m = "No speech.";
-      else if (e.error === "audio-capture") m = "Mic error.";
-      else if (e.error === "network") m = "Net error.";
+        m = "Microphone access denied.";
+      else if (e.error === "no-speech") m = "No speech detected.";
+      else if (e.error === "audio-capture") m = "Microphone error.";
+      else if (e.error === "network")
+        m = "Network error during speech recognition.";
       setChatHistory((p) => [...p, { sender: "bot", text: m }]);
       setIsListening(false);
       if (chatInputRef.current?.value === "Listening...") setChatInput("");
@@ -824,16 +724,17 @@ echRecognition || window.webkitSpeechRecognition;
 
   useEffect(() => {
     setupSpeechRecognition();
-    return () => {
-      recognitionRef.current?.abort();
-    };
+    return () => recognitionRef.current?.abort();
   }, [setupSpeechRecognition]);
 
   const handleMicClick = useCallback(() => {
     if (!recognitionRef.current) {
       setChatHistory((p) => [
         ...p,
-        { sender: "bot", text: "No speech recog." },
+        {
+          sender: "bot",
+          text: "Speech recognition is not available in your browser.",
+        },
       ]);
       return;
     }
@@ -846,231 +747,246 @@ echRecognition || window.webkitSpeechRecognition;
           recognitionRef.current.start();
         })
         .catch((err) => {
-          console.error("Mic err:", err);
-          let t = "Voice err.";
+          console.error("Mic access err:", err);
+          let t = "Voice input error.";
           if (
             err.name === "NotAllowedError" ||
             err.name === "PermissionDeniedError"
           )
-            t = "Mic denied.";
-          else if (err.name === "NotFoundError") t = "No mic.";
+            t = "Microphone access denied by user.";
+          else if (err.name === "NotFoundError") t = "No microphone found.";
           setChatHistory((p) => [...p, { sender: "bot", text: t }]);
           setIsListening(false);
         });
     }
   }, [isListening, setChatHistory, setChatInput]);
 
-  // --- Calendar Tile Styling Callback ---
-  const getTileClassName = useCallback(
-    ({ date, view }) => {
-      if (view !== "month") return null;
-      try {
-        const dS = formatDate(date);
-        if (!dS) return null;
-        const lFD = habitLog?.[dS];
-        const dO = parseDate(dS);
-        if (!dO) return null;
-        const sH = habits.filter((h) => isHabitScheduledForDate(h, dO));
-        if (sH.length === 0) return null;
-        let gMC = 0,
-          lBGC = 0,
-          cNM = 0,
-          mNM = 0,
-          lC = 0,
-          pC = 0;
-        sH.forEach((h) => {
-          const s = lFD?.[h.id];
-          if (s === undefined) pC++;
-          else {
-            lC++;
-            if (h.isMeasurable) {
-              if (typeof s === "number" && h.goal != null && s >= h.goal) gMC++;
-              else if (typeof s === "number") lBGC++;
-            } else {
-              if (s === true) cNM++;
-              else if (s === false) mNM++;
-            }
-          }
-        });
-        if (lC === 0 && pC > 0) return "habit-day-pending";
-        if (lC === 0 && pC === 0) return null;
-        const tMD = gMC + cNM;
-        const tMB = lBGC + mNM;
-        const aL = pC === 0;
-        if (tMD === sH.length) return "habit-day-all-complete";
-        if (aL && tMB > 0 && tMD === 0) return "habit-day-all-missed";
-        if (lC > 0) return "habit-day-partial-log";
-        return "habit-day-pending";
-      } catch (e) {
-        console.error("Err getTileClass:", e);
-        return null;
+  const NavItem = ({ to, children, icon: Icon }) => (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `flex items-center space-x-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors 
+        ${
+          isActive
+            ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-700 dark:text-white"
+            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-50"
+        }`
       }
-    },
-    [habits, habitLog]
+      onClick={() => setIsMobileMenuOpen(false)}
+    >
+      {Icon && <Icon className="h-5 w-5" />}
+      <span>{children}</span>
+    </NavLink>
   );
 
-  // --- Stats Panel Selection ---
-  const handleSelectHabitForStats = useCallback((id) => {
-    setSelectedHabitIdForStats((p) => (p === id ? null : id));
-  }, []);
+  const exportData = () => {
+    const dataToExport = { habits, habitLog };
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify(dataToExport, null, 2)
+    )}`;
+    const link = document.createElement("a");
+    link.href = jsonString;
+    link.download = `habit_tracker_data_${formatDate(new Date())}.json`;
+    link.click();
+    link.remove();
+  };
 
-  const selectedHabitObject = useMemo(
-    () =>
-      !selectedHabitIdForStats
-        ? null
-        : habits.find((h) => h.id === selectedHabitIdForStats),
-    [selectedHabitIdForStats, habits]
-  );
+  const importData = async (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        if (imported.habits && typeof imported.habitLog === "object") {
+          const batch = writeBatch(db);
+          const existingHabitsSnapshot = await getDocs(
+            query(habitsCollectionRef)
+          );
+          existingHabitsSnapshot.forEach((doc) => batch.delete(doc.ref));
+          const existingLogsSnapshot = await getDocs(
+            query(habitLogCollectionRef)
+          );
+          existingLogsSnapshot.forEach((doc) => batch.delete(doc.ref));
 
-  // --- Global Stats Calculation ---
-  const globalStats = useMemo(
-    () =>
-      !habits || !habitLog || habits.length === 0 || isLoadingData
-        ? {
-            overallCompletionRate: 0,
-            longestStreak: null,
-            bestHabit: null,
-            worstHabit: null,
-          }
-        : calculateGlobalStats(habits, habitLog),
-    [habits, habitLog, isLoadingData]
-  );
+          imported.habits.forEach((habit) => {
+            const habitId =
+              habit.id ||
+              `habit_${Date.now()}_${Math.random()
+                .toString(36)
+                .substring(2, 9)}`;
+            const newHabitRef = doc(db, "habits", habitId);
+            const { id, ...habitData } = habit;
+            batch.set(newHabitRef, habitData);
+          });
 
-  // --- Render ---
+          Object.entries(imported.habitLog).forEach(([dateStr, logs]) => {
+            const logRef = doc(db, "habitLog", dateStr);
+            batch.set(logRef, logs);
+          });
+
+          await batch.commit();
+          alert("Data imported successfully! Firestore data updated.");
+        } else {
+          alert(
+            'Invalid JSON file structure. Expected "habits" array and "habitLog" object.'
+          );
+        }
+      } catch (error) {
+        console.error("Error importing data:", error);
+        alert("Failed to import data. Check console for errors.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-indigo-900 font-sans text-gray-800 dark:text-gray-200 overflow-hidden">
-      <Header
-        userName={userName}
-        isDarkMode={isDarkMode}
-        toggleDarkMode={toggleDarkMode}
-        isChatOpen={isChatOpen}
-        notificationPermission={notificationPermission}
-        requestNotificationPermission={requestNotificationPermission}
-      />
+    <Router>
+      <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-indigo-900 font-sans text-gray-800 dark:text-gray-200 overflow-hidden">
+        <Header
+          userName={userName}
+          isDarkMode={isDarkMode}
+          toggleDarkMode={toggleDarkMode}
+          isChatOpen={isChatOpen}
+        />
 
-      <main className="flex-grow container mx-auto px-2 sm:px-4 py-2 md:py-4 flex flex-col gap-2 md:gap-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent pb-24">
-        {isLoadingData && (
-          <div className="fixed inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-50">
-            <p className="text-lg font-semibold animate-pulse dark:text-white">
-              Loading...
-            </p>
-          </div>
-        )}
-
-        {/* Global Stats */}
-        {!isLoadingData && habits.length > 0 && (
-          <GlobalStatsDashboard globalStats={globalStats} />
-        )}
-
-        {/* AI Motivational Message */}
-        {!isLoadingData && habits.length > 0 && (
-          <AiMotivationalMessage
-            message={motivationalMessage}
-            isLoading={isMotivationLoading}
-          />
-        )}
-
-        {/* Habit List & Stats Panel Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          <div
-            className={`space-y-4 md:space-y-6 flex flex-col ${
-              selectedHabitObject ? "lg:col-span-2" : "lg:col-span-3"
-            }`}
+        <div className="flex flex-grow overflow-hidden">
+          <nav
+            className={`fixed lg:static lg:translate-x-0 inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out ${
+              isMobileMenuOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"
+            } lg:flex flex-col space-y-1 p-4`}
           >
-            <HabitList
-              habits={habits}
-              habitLog={habitLog}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              updateHabitLog={updateHabitLog}
-              openModalForEditHabit={openModalForEditHabit}
-              handleDeleteHabitCallback={handleDeleteHabitCallback}
-              openModalForNewHabit={openModalForNewHabit}
-              getTileClassName={getTileClassName}
-              selectedHabitIdForStats={selectedHabitIdForStats}
-              onSelectHabitForStats={handleSelectHabitForStats}
-            />
-          </div>
-          {selectedHabitObject && (
-            <div className="lg:col-span-1">
-              <StatsPanel
-                habit={selectedHabitObject}
-                habitLog={habitLog}
-                onClose={() => setSelectedHabitIdForStats(null)}
+            <NavItem to="/" icon={LayoutDashboard}>
+              Dashboard
+            </NavItem>
+            <NavItem to="/manage" icon={ListChecks}>
+              Manage Habits
+            </NavItem>
+            <NavItem to="/analytics" icon={LineChart}>
+              Analytics
+            </NavItem>
+            <NavItem to="/settings" icon={SettingsIcon}>
+              Settings
+            </NavItem>
+            {isMobileMenuOpen && (
+              <div className="pt-4 border-t dark:border-gray-700 mt-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full"
+                >
+                  Close Menu
+                </Button>
+              </div>
+            )}
+          </nav>
+
+          {isMobileMenuOpen && (
+            <div
+              className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
+            ></div>
+          )}
+
+          <main className="flex-grow flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent p-3 sm:p-4 md:p-6 pb-20">
+            {isLoadingData && (
+              <div className="fixed inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-50">
+                <p className="text-lg font-semibold animate-pulse dark:text-white">
+                  Loading Data...
+                </p>
+              </div>
+            )}
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <DashboardPage
+                    habits={habits}
+                    habitLog={habitLog}
+                    openModalForNewHabit={openModalForNewHabit}
+                    openModalForEditHabit={openModalForEditHabit}
+                    handleDeleteHabitCallback={handleDeleteHabitCallback}
+                    updateHabitLog={updateHabitLog}
+                    isLoadingData={isLoadingData}
+                  />
+                }
               />
-            </div>
+              <Route
+                path="/manage"
+                element={
+                  <ManageHabitsPage
+                    habits={habits}
+                    habitLog={habitLog}
+                    openModalForEditHabit={openModalForEditHabit}
+                    handleDeleteHabitCallback={handleDeleteHabitCallback}
+                    openModalForNewHabit={openModalForNewHabit}
+                  />
+                }
+              />
+              <Route
+                path="/analytics"
+                element={<AnalyticsPage habits={habits} habitLog={habitLog} />}
+              />
+              <Route
+                path="/settings"
+                element={
+                  <SettingsPage
+                    exportData={exportData}
+                    importData={importData}
+                  />
+                }
+              />
+            </Routes>
+          </main>
+        </div>
+
+        <div className="fixed bottom-6 right-6 z-30 flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:space-x-3 items-center">
+          <Button
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            variant="outline"
+            size="icon"
+            className="lg:hidden rounded-full w-12 h-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
+            aria-label="Toggle navigation menu"
+          >
+            {isMobileMenuOpen ? <CloseIcon size={22} /> : <Menu size={22} />}
+          </Button>
+          {!isChatOpen && (
+            <Button
+              onClick={toggleChat}
+              variant="default"
+              size="icon"
+              className="rounded-full w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:scale-105 flex items-center justify-center"
+              aria-label="Chat Assistant"
+            >
+              <MessageSquare size={24} />
+            </Button>
           )}
         </div>
 
-        {/* Floating Chat Button */}
-        {!isChatOpen && (
-          <Button
-            onClick={toggleChat}
-            variant="default"
-            size="icon"
-            className="fixed bottom-6 right-6 z-10 rounded-full w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:scale-110 flex items-center justify-center"
-            aria-label="Chat"
-          >
-            <MessageSquare size={24} />
-          </Button>
-        )}
-      </main>
-
-      {/* Other Modals/Panels */}
-      <ChatPanel
-        isOpen={isChatOpen}
-        onClose={toggleChat}
-        chatHistory={chatHistory}
-        isChatLoading={isChatLoading}
-        chatInput={chatInput}
-        setChatInput={setChatInput}
-        handleSendChatMessage={handleSendChatMessage}
-        handleMicClick={handleMicClick}
-        isListening={isListening}
-        awaitingConfirmation={awaitingConfirmation}
-        chatInputRef={chatInputRef}
-        focusChatInput={focusChatInput}
-        setFocusChatInput={setFocusChatInput}
-      />
-      <HabitModal
-        isOpen={isHabitModalOpen}
-        onClose={closeHabitModal}
-        editingHabit={editingHabit}
-        habitData={habitModalData}
-        onDataChange={setHabitModalData}
-        onSave={handleHabitModalSave}
-      />
-
-      {/* Styles */}
-      <style>{`
-            /* Calendar styles */
-            .react-calendar-wrapper { max-width: 100%; padding: 0; }
-            .react-calendar { width: 100% !important; border: 1px solid #e5e7eb; border-radius: 0.5rem; background: transparent; font-family: inherit; line-height: 1.5; } .dark .react-calendar { border-color: #374151; }
-            .react-calendar__navigation button { min-width: 40px; background: none; border: none; padding: 0.5em; border-radius: 0.375rem; font-weight: 600; color: #374151; cursor: pointer; transition: background-color 0.2s; } .dark .react-calendar__navigation button { color: #d1d5db; }
-            .react-calendar__navigation button:disabled { opacity: 0.5; cursor: not-allowed; }
-            .react-calendar__navigation button:enabled:hover, .react-calendar__navigation button:enabled:focus { background-color: #f3f4f6; } .dark .react-calendar__navigation button:enabled:hover, .dark .react-calendar__navigation button:enabled:focus { background-color: #374151; }
-            .react-calendar__navigation__label { font-weight: bold; font-size: 0.9em; flex-grow: 0 !important; } .dark .react-calendar__navigation__label { color: #e5e7eb; }
-            .react-calendar__month-view__weekdays { text-align: center; font-weight: bold; color: #6b7280; } .dark .react-calendar__month-view__weekdays abbr { color: #9ca3af; text-decoration: none !important; }
-            .react-calendar__month-view__weekdays__weekday abbr { text-decoration: none !important; cursor: default; }
-            .react-calendar__tile { border-radius: 0.375rem; transition: background-color 0.2s, border-color 0.2s, color 0.2s; padding: 0.5em 0.5em; line-height: 1.2; border: 1px solid transparent; text-align: center; cursor: pointer; font-size: 0.85em; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
-            .react-calendar__month-view__days__day { color: #1f2937; } .dark .react-calendar__month-view__days__day { color: #e5e7eb; }
-            .react-calendar__month-view__days__day--neighboringMonth { color: #9ca3af; opacity: 0.7; } .dark .react-calendar__month-view__days__day--neighboringMonth { color: #6b7280; opacity: 0.7; }
-            .react-calendar__tile:disabled { background-color: #f9fafb; color: #9ca3af; cursor: not-allowed; opacity: 0.5; } .dark .react-calendar__tile:disabled { background-color: #1f2937; color: #6b7280; opacity: 0.5; }
-            .react-calendar__tile:enabled:hover, .react-calendar__tile:enabled:focus { background-color: #e5e7eb; } .dark .react-calendar__tile:enabled:hover, .dark .react-calendar__tile:enabled:focus { background-color: #374151; }
-            .react-calendar__tile--now { background: #dbeafe !important; font-weight: bold; border: 1px solid #bfdbfe !important; } .dark .react-calendar__tile--now { background: #1e3a8a !important; border-color: #3b82f6 !important; color: white !important; }
-            .react-calendar__tile--active { background: #60a5fa !important; color: white !important; } .dark .react-calendar__tile--active { background: #3b82f6 !important; color: white !important; }
-            .react-calendar__tile--active:enabled:hover, .react-calendar__tile--active:enabled:focus { background: #3b82f6 !important; } .dark .react-calendar__tile--active:enabled:hover, .dark .react-calendar__tile--active:enabled:focus { background: #2563eb !important; }
-            .habit-day-all-complete { background-color: #dcfce7 !important; border-color: #86efac !important; color: #166534 !important; } .dark .habit-day-all-complete { background-color: #064e3b !important; border-color: #34d399 !important; color: #a7f3d0 !important; }
-            .habit-day-all-missed { background-color: #fee2e2 !important; border-color: #fca5a5 !important; color: #991b1b !important; } .dark .habit-day-all-missed { background-color: #7f1d1d !important; border-color: #f87171 !important; color: #fecaca !important; }
-            .habit-day-partial-log { background-color: #e0e7ff !important; border-color: #a5b4fc !important; color: #3730a3 !important; } .dark .habit-day-partial-log { background-color: #3730a3 !important; border-color: #818cf8 !important; color: #c7d2fe !important; }
-            .habit-day-pending { border: 1px dashed #d1d5db !important; background-color: transparent !important; color: #6b7280 !important; } .dark .habit-day-pending { border-color: #4b5563 !important; color: #9ca3af !important; }
-            .react-calendar__tile--active.habit-day-all-complete, .react-calendar__tile--active.habit-day-all-missed, .react-calendar__tile--active.habit-day-partial-log, .react-calendar__tile--active.habit-day-pending { color: white !important; } .dark .react-calendar__tile--active.habit-day-all-complete, .dark .react-calendar__tile--active.habit-day-all-missed, .dark .react-calendar__tile--active.habit-day-partial-log, .dark .react-calendar__tile--active.habit-day-pending { color: white !important; }
-            /* Scrollbar styles */
-            .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; } .dark .scrollbar-thin { scrollbar-color: #4b5563 transparent; } ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 3px; border: 1px solid transparent; } .dark ::-webkit-scrollbar-thumb { background-color: #4b5563; } ::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; } .dark ::-webkit-scrollbar-thumb:hover { background-color: #6b7280; }
-            /* Prose adjustments */
-            .prose p:first-child, .prose p:last-child { margin-top: 0; margin-bottom: 0; } .dark .prose-invert { --tw-prose-body: #d1d5db; --tw-prose-headings: #fff; }
-          `}</style>
-    </div>
+        <ChatPanel
+          isOpen={isChatOpen}
+          onClose={toggleChat}
+          chatHistory={chatHistory}
+          isChatLoading={isChatLoading}
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          handleSendChatMessage={handleSendChatMessage}
+          handleMicClick={handleMicClick}
+          isListening={isListening}
+          awaitingConfirmation={awaitingConfirmation}
+          chatInputRef={chatInputRef}
+          focusChatInput={focusChatInput}
+          setFocusChatInput={setFocusChatInput}
+        />
+        <HabitModal
+          isOpen={isHabitModalOpen}
+          onClose={closeHabitModal}
+          editingHabit={editingHabit}
+          habitData={habitModalData}
+          onDataChange={setHabitModalData}
+          onSave={handleHabitModalSave}
+        />
+      </div>
+    </Router>
   );
 }
 
