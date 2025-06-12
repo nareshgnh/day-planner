@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'; // Added useEffect here
 import { GlobalStatsDashboard } from '../components/GlobalStatsDashboard';
 import { AiMotivationalMessage } from '../components/AiMotivationalMessage';
-import HabitVisuals from '../components/HabitVisuals'; // Import HabitVisuals
+import { HabitVisuals } from '../components/HabitVisuals'; // Import HabitVisuals
 import { HabitList } from '../components/HabitList';
 import { StatsPanel } from '../components/StatsPanel';
 import { formatDate, parseDate, isHabitScheduledForDate } from "../utils/helpers";
