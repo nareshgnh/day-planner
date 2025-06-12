@@ -15,10 +15,13 @@ import {
   Target, // Icon for goal (measurable)
   // Import an Undo icon if preferred over MinusCircle
   // Undo2
+  Flame, // For streak icon
 } from "lucide-react";
+import { calculateStreak } from "../../utils/stats"; // Import calculateStreak
 
 export const HabitListItem = ({
   habit,
+  habitLog, // Add habitLog prop
   logStatus, // Can be boolean | number | undefined
   selectedDate,
   isSelected,
@@ -28,9 +31,12 @@ export const HabitListItem = ({
   onSelect,
 }) => {
   const isGoodHabit = habit.type !== "bad";
+  const isGoodHabit = habit.type !== "bad";
   const isMeasurable = habit.isMeasurable || false;
   const goal = isMeasurable ? habit.goal : null;
   const unit = isMeasurable ? habit.unit || "" : "";
+
+  const { currentStreak } = calculateStreak(habit, habitLog); // Calculate streak
 
   const [logValueInput, setLogValueInput] = useState("");
 
@@ -159,18 +165,26 @@ export const HabitListItem = ({
           >
             {habit.title}
           </span>
-          {/* Status display logic remains same */}
-          <span
-            className={`text-xs ${
-              typeof logStatus === "number"
-                ? goalMet
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-blue-600 dark:text-blue-400"
-                : "text-gray-500 dark:text-gray-400"
-            }`}
-          >
-            {displayStatus}
-          </span>
+          {/* Status and Streak display */}
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-xs ${
+                typeof logStatus === "number"
+                  ? goalMet
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
+            >
+              {displayStatus}
+            </span>
+            {currentStreak > 0 && (
+              <span className="text-xs text-orange-500 dark:text-orange-400 flex items-center">
+                <Flame size={12} className="mr-0.5" />
+                {currentStreak} day{currentStreak > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

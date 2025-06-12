@@ -50,6 +50,7 @@ import {
   parseDate,
   isHabitScheduledForDate,
 } from "./utils/helpers";
+import { calculateTotalPoints } from "./utils/stats"; // Import calculateTotalPoints
 import { fetchChatResponse } from "./utils/api";
 import * as Actions from "./constants";
 
@@ -103,6 +104,8 @@ function App() {
   const [notificationPermission, setNotificationPermission] =
     useState("default");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const totalPoints = useMemo(() => calculateTotalPoints(habits, habitLog), [habits, habitLog]);
 
   useEffect(() => {
     setIsLoadingData(true);
@@ -603,8 +606,41 @@ function App() {
           cM = "Error processing AI action.";
           rC = false;
         }
-      } else {
-        cM = bR.text || "I'm not sure how to respond to that.";
+      } else { // Handles ACTION_GENERAL_CHAT or undefined action
+        let originalCm = bR.text || "I'm not sure how to respond to that."; // Default if bR.text is also null/undefined
+        const normalizedBotText = originalCm.toLowerCase().trim();
+        const textWordCount = normalizedBotText.split(/\s+/).filter(Boolean).length;
+
+        const nonActionablePhrases = [
+          "i don't understand",
+          "sorry, i can't",
+          "i'm not sure",
+          "i cannot help",
+          "invalid ai response", // Check against our own default for invalid bR
+          "i'm not sure how to respond to that", // Check against the default AI response
+        ];
+
+        let isNonActionableResponse = false;
+        if (!bR.action || bR.action === Actions.ACTION_GENERAL_CHAT) {
+          if (!normalizedBotText || textWordCount < 3) {
+            isNonActionableResponse = true;
+          } else {
+            for (const phrase of nonActionablePhrases) {
+              if (normalizedBotText.includes(phrase)) {
+                isNonActionableResponse = true;
+                break;
+              }
+            }
+          }
+        }
+
+        if (isNonActionableResponse && !rC) { // Not in a confirmation flow and response is vague
+          cM = "I'm not quite sure what you mean. I can help you add, delete, or log habits, and suggest new ones. For example, you could say 'add a new habit to read for 20 minutes daily' or 'I completed my meditation habit today'. How can I assist you?";
+        } else {
+          cM = originalCm; // Use the original AI message if it's not deemed non-actionable
+        }
+
+        // Still allow name changes even if the message was initially non-actionable but then changed by name logic
         const nk = ["my name is ", "i'm ", "im ", "call me "];
         const kf = nk.find((kw) => lowerMsg.startsWith(kw));
         if (kf) {
@@ -844,6 +880,7 @@ function App() {
       <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-black dark:to-indigo-900 font-sans text-gray-800 dark:text-gray-200 overflow-hidden">
         <Header
           userName={userName}
+          totalPoints={totalPoints} // Pass totalPoints to Header
           isDarkMode={isDarkMode}
           toggleDarkMode={toggleDarkMode}
           isChatOpen={isChatOpen}
