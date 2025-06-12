@@ -17,7 +17,7 @@ import {
   // Undo2
   Flame, // For streak icon
 } from "lucide-react";
-import { calculateStreak } from "../../utils/stats"; // Import calculateStreak
+import { calculateStreak } from "../utils/stats"; // Import calculateStreak
 
 export const HabitListItem = ({
   habit,
@@ -30,7 +30,6 @@ export const HabitListItem = ({
   onDelete,
   onSelect,
 }) => {
-  const isGoodHabit = habit.type !== "bad";
   const isGoodHabit = habit.type !== "bad";
   const isMeasurable = habit.isMeasurable || false;
   const goal = isMeasurable ? habit.goal : null;

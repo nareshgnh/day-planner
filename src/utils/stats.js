@@ -389,7 +389,7 @@ export const calculateGlobalStats = (habits, habitLog) => {
     totalMissedEntries: totalScheduledAndLogged - totalSuccessfullyCompleted,
     totalLoggedDays: totalLoggedEntries,
   };
-
+}
 /**
  * Calculates the total points accumulated by the user based on habit logs.
  * Points are awarded for successfully completing/avoiding habits.
