@@ -351,13 +351,44 @@ export const prepareChartData = (
  * @returns {object} { overallCompletionRate, longestStreak: { habitTitle, length }, bestHabit: { title, score }, worstHabit: { title, score } }
  */
 export const calculateGlobalStats = (habits, habitLog) => {
-// NOTE: The following lines were likely erroneously duplicated content starting with another import statement.
-// // src/utils/stats.js
-// import { formatDate, parseDate, isHabitScheduledForDate } from "./helpers";
-// Ensure the rest of the calculateGlobalStats function body follows immediately after the corrected signature.
-// The original diff seemed to imply that the entire file content was duplicated after the .jsx error.
-// This comment signifies the end of the duplicated block and the start of the correct, single `calculateTotalPoints` function.
-// All the duplicated code above this line in the SEARCH block will be removed.
+  if (!habits || habits.length === 0) {
+    return {
+      totalHabits: 0,
+      overallCompletionRate: 0,
+      totalCompletedEntries: 0,
+      totalMissedEntries: 0,
+      totalLoggedDays: 0,
+      // bestHabit: null, // Could be added later
+      // worstHabit: null, // Could be added later
+    };
+  }
+
+  let totalScheduledAndLogged = 0;
+  let totalSuccessfullyCompleted = 0;
+  let totalLoggedEntries = 0; // Count of actual log entries found
+
+  habits.forEach(habit => {
+    if (!habit || !habit.id) return; // Skip invalid habits
+    const habitStats = calculateStats(habit, habitLog);
+
+    totalSuccessfullyCompleted += habitStats.totalCompleted;
+    // totalOpportunities from calculateStats = days scheduled AND logged
+    totalScheduledAndLogged += habitStats.totalOpportunities;
+    totalLoggedEntries += habitStats.totalOpportunities; // Using totalOpportunities as count of logged days
+  });
+
+  // Fallback if no scheduled/logged days to prevent division by zero
+  // Overall completion rate is based on opportunities where a log was made against a scheduled day
+  const overallCompletionRate = totalScheduledAndLogged > 0 ? (totalSuccessfullyCompleted / totalScheduledAndLogged) * 100 : 0;
+
+  return {
+    totalHabits: habits.length,
+    overallCompletionRate: parseFloat(overallCompletionRate.toFixed(1)),
+    totalCompletedEntries: totalSuccessfullyCompleted,
+    // Missed entries are opportunities that were logged but not successful
+    totalMissedEntries: totalScheduledAndLogged - totalSuccessfullyCompleted,
+    totalLoggedDays: totalLoggedEntries,
+  };
 
 /**
  * Calculates the total points accumulated by the user based on habit logs.
