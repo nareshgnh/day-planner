@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'; // Added useEffect here
 import { GlobalStatsDashboard } from '../components/GlobalStatsDashboard';
 import { AiMotivationalMessage } from '../components/AiMotivationalMessage';
+import { HabitVisuals } from '../components/HabitVisuals'; // Import HabitVisuals
 import { HabitList } from '../components/HabitList';
 import { StatsPanel } from '../components/StatsPanel';
 import { formatDate, parseDate, isHabitScheduledForDate } from "../utils/helpers";
@@ -123,6 +124,9 @@ const DashboardPage = ({ habits, habitLog, openModalForNewHabit, openModalForEdi
           message={motivationalMessage}
           isLoading={isMotivationLoading}
         />
+      )}
+      {!isLoadingData && habits.length > 0 && ( // Ensure habits and habitLog are loaded
+        <HabitVisuals habits={habits} habitLog={habitLog} />
       )}
       <div className={`grid grid-cols-1 ${selectedHabitObject ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-4 md:gap-6 flex-grow`}>
         <div className={`space-y-4 md:space-y-6 flex flex-col ${selectedHabitObject ? 'lg:col-span-2' : 'lg:col-span-1' }`}>

@@ -1,11 +1,12 @@
 // src/components/Header.jsx
 import React from "react";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, Trophy } from "lucide-react"; // Import Trophy
 import { Button } from "../ui/Button"; 
 import { getGreeting } from "../utils/helpers"; 
 
 export const Header = ({
   userName,
+  totalPoints, // Add totalPoints to props
   isDarkMode,
   toggleDarkMode,
   isChatOpen, // Keep for potential responsive logic for dark mode button
@@ -35,6 +36,13 @@ export const Header = ({
               })}
             </p>
           </div>
+
+          {/* Total Points Display */}
+          <div className="flex items-center gap-1 text-sm text-amber-500 dark:text-amber-400 font-medium mr-2 sm:mr-3">
+            <Trophy size={18} className="text-amber-400 dark:text-amber-300" />
+            <span>{totalPoints}</span>
+          </div>
+
           <Button
             onClick={toggleDarkMode}
             variant="ghost"

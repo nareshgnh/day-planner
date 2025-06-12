@@ -91,6 +91,7 @@ export const HabitList = ({
               <HabitListItem
                 key={habit.id}
                 habit={habit}
+                habitLog={habitLog} // Pass the full habitLog
                 logStatus={selectedDayLog[habit.id]}
                 selectedDate={selectedDate}
                 isSelected={habit.id === selectedHabitIdForStats}
