@@ -37,6 +37,18 @@ class GoogleDriveSync {
                 : "NOT_SET",
             });
 
+            // Debug: Log actual values (remove this after testing)
+            console.log("DEBUG - Actual env values:", {
+              apiKey:
+                process.env.REACT_APP_GOOGLE_API_KEY?.substring(0, 10) + "...",
+              clientId:
+                process.env.REACT_APP_GOOGLE_CLIENT_ID?.substring(0, 10) +
+                "...",
+              allEnvKeys: Object.keys(process.env).filter((k) =>
+                k.startsWith("REACT_APP_")
+              ),
+            });
+
             await window.gapi.client.init({
               apiKey: process.env.REACT_APP_GOOGLE_API_KEY,
               clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID,
