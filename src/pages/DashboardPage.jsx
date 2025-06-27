@@ -1,14 +1,33 @@
 // src/pages/DashboardPage.jsx
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'; // Added useEffect here
-import { GlobalStatsDashboard } from '../components/GlobalStatsDashboard';
-import { AiMotivationalMessage } from '../components/AiMotivationalMessage';
-import { HabitList } from '../components/HabitList';
-import { StatsPanel } from '../components/StatsPanel';
-import { formatDate, parseDate, isHabitScheduledForDate } from "../utils/helpers";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react"; // Added useEffect here
+import { GlobalStatsDashboard } from "../components/GlobalStatsDashboard";
+import { AiMotivationalMessage } from "../components/AiMotivationalMessage";
+import { HabitList } from "../components/HabitList";
+import { StatsPanel } from "../components/StatsPanel";
+import { QuickActionsPanel } from "../components/QuickActionsPanel";
+import {
+  formatDate,
+  parseDate,
+  isHabitScheduledForDate,
+} from "../utils/helpers";
 import { calculateGlobalStats } from "../utils/stats";
 import { fetchDailyMotivation } from "../utils/api";
 
-const DashboardPage = ({ habits, habitLog, openModalForNewHabit, openModalForEditHabit, handleDeleteHabitCallback, updateHabitLog, isLoadingData }) => {
+const DashboardPage = ({
+  habits,
+  habitLog,
+  openModalForNewHabit,
+  openModalForEditHabit,
+  handleDeleteHabitCallback,
+  updateHabitLog,
+  isLoadingData,
+}) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
   const [motivationalMessage, setMotivationalMessage] = useState("");
@@ -27,7 +46,12 @@ const DashboardPage = ({ habits, habitLog, openModalForNewHabit, openModalForEdi
         if (!dO) return null;
         const sH = habits.filter((h) => isHabitScheduledForDate(h, dO));
         if (sH.length === 0) return null;
-        let gMC = 0, lBGC = 0, cNM = 0, mNM = 0, lC = 0, pC = 0;
+        let gMC = 0,
+          lBGC = 0,
+          cNM = 0,
+          mNM = 0,
+          lC = 0,
+          pC = 0;
         sH.forEach((h) => {
           const s = lFD?.[h.id];
           if (s === undefined) pC++;
@@ -64,13 +88,22 @@ const DashboardPage = ({ habits, habitLog, openModalForNewHabit, openModalForEdi
   }, []);
 
   const selectedHabitObject = useMemo(
-    () => !selectedHabitIdForStats ? null : habits.find((h) => h.id === selectedHabitIdForStats),
+    () =>
+      !selectedHabitIdForStats
+        ? null
+        : habits.find((h) => h.id === selectedHabitIdForStats),
     [selectedHabitIdForStats, habits]
   );
 
   const globalStats = useMemo(
-    () => !habits || !habitLog || habits.length === 0 || isLoadingData
-        ? { overallCompletionRate: 0, longestStreak: null, bestHabit: null, worstHabit: null }
+    () =>
+      !habits || !habitLog || habits.length === 0 || isLoadingData
+        ? {
+            overallCompletionRate: 0,
+            longestStreak: null,
+            bestHabit: null,
+            worstHabit: null,
+          }
         : calculateGlobalStats(habits, habitLog),
     [habits, habitLog, isLoadingData]
   );
@@ -82,17 +115,25 @@ const DashboardPage = ({ habits, habitLog, openModalForNewHabit, openModalForEdi
       const today = new Date();
       const todayStr = formatDate(today);
       const todaysLog = habitLog[todayStr] || {};
-      const activeToday = habits.filter((habit) => isHabitScheduledForDate(habit, today));
+      const activeToday = habits.filter((habit) =>
+        isHabitScheduledForDate(habit, today)
+      );
       const currentHour = today.getHours();
       let timePeriod = "Evening";
       if (currentHour < 12) timePeriod = "Morning";
       else if (currentHour < 18) timePeriod = "Afternoon";
 
       if (activeToday.length > 0) {
-        const msg = await fetchDailyMotivation(activeToday, todaysLog, timePeriod);
+        const msg = await fetchDailyMotivation(
+          activeToday,
+          todaysLog,
+          timePeriod
+        );
         setMotivationalMessage(msg);
       } else {
-        setMotivationalMessage("No habits scheduled today. Ready to plan for tomorrow?");
+        setMotivationalMessage(
+          "No habits scheduled today. Ready to plan for tomorrow?"
+        );
       }
     } catch (e) {
       console.error(e);
@@ -124,8 +165,16 @@ const DashboardPage = ({ habits, habitLog, openModalForNewHabit, openModalForEdi
           isLoading={isMotivationLoading}
         />
       )}
-      <div className={`grid grid-cols-1 ${selectedHabitObject ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-4 md:gap-6 flex-grow`}>
-        <div className={`space-y-4 md:space-y-6 flex flex-col ${selectedHabitObject ? 'lg:col-span-2' : 'lg:col-span-1' }`}>
+      <div
+        className={`grid grid-cols-1 ${
+          selectedHabitObject ? "lg:grid-cols-3" : "lg:grid-cols-4"
+        } gap-4 md:gap-6 flex-grow`}
+      >
+        <div
+          className={`space-y-4 md:space-y-6 flex flex-col ${
+            selectedHabitObject ? "lg:col-span-2" : "lg:col-span-3"
+          }`}
+        >
           <HabitList
             habits={habits}
             habitLog={habitLog}
@@ -140,6 +189,17 @@ const DashboardPage = ({ habits, habitLog, openModalForNewHabit, openModalForEdi
             onSelectHabitForStats={handleSelectHabitForStats}
           />
         </div>
+
+        {/* Quick Actions Panel - Always visible */}
+        <div className="lg:col-span-1">
+          <QuickActionsPanel
+            habits={habits}
+            habitLog={habitLog}
+            selectedDate={selectedDate}
+            updateHabitLog={updateHabitLog}
+          />
+        </div>
+
         {selectedHabitObject && (
           <div className="lg:col-span-1">
             <StatsPanel

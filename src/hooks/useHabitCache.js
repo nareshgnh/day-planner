@@ -1,5 +1,20 @@
 // src/hooks/useHabitCache.js
 import { useState, useEffect, useMemo } from "react";
+import { calculateStats } from "../utils/stats";
+import { isHabitScheduledForDate } from "../utils/helpers";
+
+// Helper functions for habit calculations
+const calculateCompletionRate = (habit, habitLog) => {
+  const stats = calculateStats(habit, habitLog);
+  return stats.totalOpportunities > 0
+    ? (stats.totalCompleted / stats.totalOpportunities) * 100
+    : 0;
+};
+
+const calculateCurrentStreak = (habit, habitLog) => {
+  const stats = calculateStats(habit, habitLog);
+  return stats.currentStreak || 0;
+};
 
 // Custom hook for caching and optimizing habit data
 export const useHabitCache = (habits, habitLog) => {

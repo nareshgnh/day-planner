@@ -22,8 +22,10 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import { calculateStats, prepareChartData } from "../utils/stats";
+import { calculateStats } from "../utils/stats";
 import { formatDate, isHabitScheduledForDate } from "../utils/helpers";
+// import { PersonalBestsPanel } from "../components/PersonalBestsPanel";
+// import { HabitHeatmap } from "../components/HabitHeatmap";
 
 ChartJS.register(
   CategoryScale,
@@ -38,79 +40,101 @@ ChartJS.register(
 );
 
 const AnalyticsPage = ({ habits, habitLog }) => {
+  // Add error handling
+  console.log("Analytics page rendering with:", {
+    habitsCount: habits?.length,
+    habitLogKeys: Object.keys(habitLog || {}).length,
+  });
+
   // Calculate comprehensive analytics
   const analytics = useMemo(() => {
-    if (!habits.length) return null;
+    console.log("Calculating analytics...", { habits, habitLog });
 
-    // Overall completion rates over time
-    const last30Days = Array.from({ length: 30 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      return date;
-    }).reverse();
+    if (!habits || !Array.isArray(habits) || habits.length === 0) {
+      console.log("No habits found, returning null");
+      return null;
+    }
 
-    const dailyCompletionRates = last30Days.map((date) => {
-      const dateStr = formatDate(date);
-      const dayLog = habitLog[dateStr] || {};
-      const scheduledHabits = habits.filter((h) =>
-        isHabitScheduledForDate(h, date)
-      );
+    if (!habitLog || typeof habitLog !== "object") {
+      console.log("No habit log found, returning null");
+      return null;
+    }
 
-      if (scheduledHabits.length === 0)
-        return { date: dateStr, rate: 0, scheduled: 0 };
+    try {
+      // Overall completion rates over time
+      const last30Days = Array.from({ length: 30 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        return date;
+      }).reverse();
 
-      let completed = 0;
-      scheduledHabits.forEach((habit) => {
-        const status = dayLog[habit.id];
-        const isCompleted = habit.isMeasurable
-          ? typeof status === "number" && habit.goal && status >= habit.goal
-          : status === true;
-        if (isCompleted) completed++;
+      const dailyCompletionRates = last30Days.map((date) => {
+        const dateStr = formatDate(date);
+        const dayLog = habitLog[dateStr] || {};
+        const scheduledHabits = habits.filter((h) =>
+          isHabitScheduledForDate(h, date)
+        );
+
+        if (scheduledHabits.length === 0)
+          return { date: dateStr, rate: 0, scheduled: 0 };
+
+        let completed = 0;
+        scheduledHabits.forEach((habit) => {
+          const status = dayLog[habit.id];
+          const isCompleted = habit.isMeasurable
+            ? typeof status === "number" && habit.goal && status >= habit.goal
+            : status === true;
+          if (isCompleted) completed++;
+        });
+
+        return {
+          date: dateStr,
+          rate: (completed / scheduledHabits.length) * 100,
+          scheduled: scheduledHabits.length,
+          completed,
+        };
       });
 
+      // Habit category breakdown
+      const categoryData = habits.reduce((acc, habit) => {
+        const category = habit.category || "Uncategorized";
+        acc[category] = (acc[category] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Best performing habits
+      const habitPerformance = habits
+        .map((habit) => {
+          const stats = calculateStats(habit, habitLog);
+          const completionRate =
+            stats.totalOpportunities > 0
+              ? (stats.totalCompleted / stats.totalOpportunities) * 100
+              : 0;
+          return {
+            ...habit,
+            ...stats,
+            completionRate,
+          };
+        })
+        .sort((a, b) => b.completionRate - a.completionRate);
+
       return {
-        date: dateStr,
-        rate: (completed / scheduledHabits.length) * 100,
-        scheduled: scheduledHabits.length,
-        completed,
+        dailyCompletionRates,
+        categoryData,
+        habitPerformance,
+        totalHabits: habits.length,
+        activeStreaks: habitPerformance.filter((h) => h.currentStreak > 0)
+          .length,
       };
-    });
-
-    // Habit category breakdown
-    const categoryData = habits.reduce((acc, habit) => {
-      const category = habit.category || "Uncategorized";
-      acc[category] = (acc[category] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Best performing habits
-    const habitPerformance = habits
-      .map((habit) => {
-        const stats = calculateStats(habit, habitLog);
-        const completionRate =
-          stats.totalOpportunities > 0
-            ? (stats.totalCompleted / stats.totalOpportunities) * 100
-            : 0;
-        return {
-          ...habit,
-          ...stats,
-          completionRate,
-        };
-      })
-      .sort((a, b) => b.completionRate - a.completionRate);
-
-    return {
-      dailyCompletionRates,
-      categoryData,
-      habitPerformance,
-      totalHabits: habits.length,
-      activeStreaks: habitPerformance.filter((h) => h.currentStreak > 0).length,
-    };
+    } catch (error) {
+      console.error("Error calculating analytics:", error);
+      return null;
+    }
   }, [habits, habitLog]);
 
   if (!analytics) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
           <LineChart
             size={28}
@@ -120,7 +144,9 @@ const AnalyticsPage = ({ habits, habitLog }) => {
         </h2>
         <Card>
           <CardContent className="pt-6 text-center text-gray-500 dark:text-gray-400">
-            Add some habits to see your analytics!
+            {!habits || habits.length === 0
+              ? "Add some habits to see your analytics!"
+              : "Loading analytics data..."}
           </CardContent>
         </Card>
       </div>
@@ -196,6 +222,9 @@ const AnalyticsPage = ({ habits, habitLog }) => {
         />
         Analytics Dashboard
       </h2>
+
+      {/* Personal Bests Panel - New motivational section */}
+      {/* <PersonalBestsPanel habits={habits} habitLog={habitLog} /> */}
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -417,6 +446,24 @@ const AnalyticsPage = ({ habits, habitLog }) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Individual Habit Heatmaps */}
+      {/* Temporarily commented out for debugging
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+          <Calendar
+            size={24}
+            className="mr-2 text-purple-600 dark:text-purple-400"
+          />
+          Habit Progress Heatmaps
+        </h3>
+        <div className="grid grid-cols-1 gap-4">
+          {analytics.habitPerformance.slice(0, 6).map((habit) => (
+            <HabitHeatmap key={habit.id} habit={habit} habitLog={habitLog} />
+          ))}
+        </div>
+      </div>
+      */}
     </div>
   );
 };

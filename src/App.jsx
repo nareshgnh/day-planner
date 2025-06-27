@@ -932,6 +932,8 @@ function App() {
                   <SettingsPage
                     exportData={exportData}
                     importData={importData}
+                    habits={habits}
+                    habitLog={habitLog}
                   />
                 }
               />

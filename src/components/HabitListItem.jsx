@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "../ui/Button"; // Adjust path
 import { Input } from "../ui/Input"; // Adjust path
+import { CelebrationSystem, useCelebration } from "./CelebrationSystem";
 import {
   CheckCircle,
   XCircle,
@@ -33,6 +34,7 @@ export const HabitListItem = ({
   const unit = isMeasurable ? habit.unit || "" : "";
 
   const [logValueInput, setLogValueInput] = useState("");
+  const { celebration, celebrate, completeCelebration } = useCelebration();
 
   useEffect(() => {
     if (isMeasurable) {
@@ -46,6 +48,17 @@ export const HabitListItem = ({
   const handleLogBoolean = (e, status) => {
     e.stopPropagation();
     updateHabitLog(habit.id, selectedDate, status);
+
+    // Celebrate if completing a good habit or avoiding a bad habit
+    if (
+      (isGoodHabit && status === true) ||
+      (!isGoodHabit && status === false)
+    ) {
+      const celebrationMessage = isGoodHabit
+        ? `Great job completing "${habit.title}"!`
+        : `Awesome! You avoided "${habit.title}" today!`;
+      celebrate("habit", celebrationMessage);
+    }
   };
 
   // *** ADDED: Handler for clearing boolean log ***
@@ -67,13 +80,30 @@ export const HabitListItem = ({
       const numericValue = parseFloat(valueStr);
       if (!isNaN(numericValue) && numericValue >= 0) {
         updateHabitLog(habit.id, selectedDate, numericValue);
+
+        // Celebrate if reaching the goal
+        if (goal && numericValue >= goal) {
+          celebrate(
+            "habit",
+            habit.title,
+            `Goal reached: ${numericValue}${unit}`
+          );
+        }
       } else {
         alert(
           `Please enter a valid positive number or 0 for ${unit || "value"}.`
         );
       }
     },
-    [logValueInput, habit.id, selectedDate, updateHabitLog, unit]
+    [
+      logValueInput,
+      habit.id,
+      selectedDate,
+      updateHabitLog,
+      unit,
+      goal,
+      celebrate,
+    ]
   );
 
   const handleInputKeyPress = (e) => {
@@ -304,6 +334,15 @@ export const HabitListItem = ({
           <Trash2 size={16} />
         </Button>
       </div>
+
+      {/* Celebration System */}
+      <CelebrationSystem
+        isVisible={celebration.isVisible}
+        onComplete={completeCelebration}
+        celebrationType={celebration.type}
+        habitTitle={celebration.habitTitle}
+        milestoneText={celebration.milestoneText}
+      />
     </li>
   );
 };
