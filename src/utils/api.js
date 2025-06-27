@@ -707,3 +707,53 @@ Respond ONLY with the JSON structure when performing an action. No extra text.
     return { text: `Sorry, an error occurred contacting the AI.` };
   }
 }
+
+// Enhanced AI capabilities - add these to your existing API
+
+// New AI commands to add to your chat system:
+const ENHANCED_AI_COMMANDS = [
+  // Habit Analysis
+  "ANALYZE_HABIT_PATTERN",
+  "SUGGEST_HABIT_IMPROVEMENTS",
+  "IDENTIFY_HABIT_CONFLICTS",
+  "RECOMMEND_HABIT_TIMING",
+
+  // Motivation & Coaching
+  "PROVIDE_PERSONALIZED_MOTIVATION",
+  "SUGGEST_HABIT_STACK",
+  "HABIT_TROUBLESHOOTING",
+  "CELEBRATION_MESSAGE",
+
+  // Planning & Strategy
+  "CREATE_HABIT_PLAN",
+  "WEEKLY_HABIT_REVIEW",
+  "MONTHLY_GOAL_SETTING",
+  "HABIT_PRIORITIZATION",
+];
+
+// Example enhanced AI responses:
+export const generateHabitAnalysis = async (habits, habitLog) => {
+  // Analyze patterns and provide insights
+  const analysis = {
+    strongestHabits: habits.filter(
+      (h) => calculateCompletionRate(h, habitLog) > 80
+    ),
+    strugglingHabits: habits.filter(
+      (h) => calculateCompletionRate(h, habitLog) < 50
+    ),
+    optimalTimes: analyzeCompletionTimes(habitLog),
+    suggestions: generatePersonalizedSuggestions(habits, habitLog),
+  };
+
+  return analysis;
+};
+
+// Add voice commands for hands-free habit logging
+export const VOICE_COMMANDS = {
+  "mark [habit] as done": (habitName) => markHabitComplete(habitName, true),
+  "log [number] [unit] for [habit]": (number, unit, habitName) =>
+    logMeasurableHabit(habitName, number),
+  "show my progress": () => showDashboard(),
+  "add new habit [name]": (habitName) => openHabitModal(habitName),
+  "what are my habits for today": () => showTodayHabits(),
+};
