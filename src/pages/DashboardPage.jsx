@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import { GlobalStatsDashboard } from "../components/GlobalStatsDashboard";
 import { AiMotivationalMessage } from "../components/AiMotivationalMessage";
-import { TodaysHabitsPanel } from "../components/TodaysHabitsPanel";
 import { HabitList } from "../components/HabitList";
 import { StatsPanel } from "../components/StatsPanel";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
@@ -248,31 +247,9 @@ const DashboardPage = ({
                 <p className="text-gray-600 dark:text-gray-300">
                   {todayProgress.total === 0
                     ? "No habits scheduled for today. Time to plan ahead!"
-                    : `You have ${todayProgress.remaining} ${
-                        todayProgress.remaining === 1 ? "habit" : "habits"
-                      } remaining today`}
+                    : "Ready to tackle your habits for today?"}
                 </p>
               </div>
-              {todayProgress.total > 0 && (
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                      {todayProgress.percentage}%
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                      Complete
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-                      {todayProgress.completed}/{todayProgress.total}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                      Done
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -283,24 +260,18 @@ const DashboardPage = ({
               {/* Progress Overview - Compact Stats */}
               <GlobalStatsDashboard globalStats={globalStats} />
 
-              {/* Today's Quick Actions */}
-              <TodaysHabitsPanel
-                habits={habits}
-                habitLog={habitLog}
-                updateHabitLog={updateHabitLog}
-                openModalForNewHabit={openModalForNewHabit}
-              />
-
-              {/* Main Habits List */}
+              {/* Calendar and Habits List */}
               <div
                 className={`${
-                  selectedHabitObject
+                  selectedHabitIdForStats
                     ? "grid grid-cols-1 lg:grid-cols-3 gap-6"
                     : ""
                 }`}
               >
                 <div
-                  className={`${selectedHabitObject ? "lg:col-span-2" : ""}`}
+                  className={`${
+                    selectedHabitIdForStats ? "lg:col-span-2" : ""
+                  }`}
                 >
                   <HabitList
                     habits={habits}
