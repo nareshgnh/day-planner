@@ -231,8 +231,8 @@ const DashboardPage = ({
       {/* Main Dashboard - Has habits */}
       {!isLoadingData && habits.length > 0 && (
         <>
-          {/* Welcome & Today's Progress Header */}
-          <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-6 border border-indigo-100 dark:border-gray-700">
+          {/* Welcome Header - Compact & Elegant */}
+          <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-indigo-100 dark:border-gray-700 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
@@ -253,20 +253,20 @@ const DashboardPage = ({
                 </p>
               </div>
               {todayProgress.total > 0 && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
                       {todayProgress.percentage}%
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
                       Complete
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                    <div className="text-xl font-semibold text-gray-700 dark:text-gray-300">
                       {todayProgress.completed}/{todayProgress.total}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
                       Done
                     </div>
                   </div>
@@ -275,62 +275,67 @@ const DashboardPage = ({
             </div>
           </div>
 
-          {/* Top Row: Stats and Motivation */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <GlobalStatsDashboard 
-                globalStats={globalStats} 
+          {/* Main Content Grid - Improved Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            {/* Left Column - Progress & Daily Insight */}
+            <div className="xl:col-span-3 space-y-6">
+              {/* Progress Overview - Full Width */}
+              <GlobalStatsDashboard
+                globalStats={globalStats}
                 habits={habits}
                 habitLog={habitLog}
                 updateHabitLog={updateHabitLog}
                 openModalForNewHabit={openModalForNewHabit}
               />
-            </div>
-            <div className="lg:col-span-1">
-              <AiMotivationalMessage
-                message={motivationalMessage}
-                isLoading={isMotivationLoading}
-              />
-            </div>
-          </div>
 
-          {/* Main Content Area */}
-          <div
-            className={`grid grid-cols-1 ${
-              selectedHabitObject ? "lg:grid-cols-3" : "lg:grid-cols-1"
-            } gap-6 flex-grow`}
-          >
-            {/* Habit List */}
-            <div
-              className={`${
-                selectedHabitObject ? "lg:col-span-2" : "lg:col-span-1"
-              }`}
-            >
-              <HabitList
-                habits={habits}
-                habitLog={habitLog}
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-                updateHabitLog={updateHabitLog}
-                openModalForEditHabit={openModalForEditHabit}
-                handleDeleteHabitCallback={handleDeleteHabitCallback}
-                openModalForNewHabit={openModalForNewHabit}
-                getTileClassName={getTileClassName}
-                selectedHabitIdForStats={selectedHabitIdForStats}
-                onSelectHabitForStats={handleSelectHabitForStats}
-              />
+              {/* Today's Habits List */}
+              <div
+                className={`${
+                  selectedHabitObject
+                    ? "grid grid-cols-1 lg:grid-cols-3 gap-6"
+                    : ""
+                }`}
+              >
+                <div
+                  className={`${selectedHabitObject ? "lg:col-span-2" : ""}`}
+                >
+                  <HabitList
+                    habits={habits}
+                    habitLog={habitLog}
+                    selectedDate={selectedDate}
+                    setSelectedDate={setSelectedDate}
+                    updateHabitLog={updateHabitLog}
+                    openModalForEditHabit={openModalForEditHabit}
+                    handleDeleteHabitCallback={handleDeleteHabitCallback}
+                    openModalForNewHabit={openModalForNewHabit}
+                    getTileClassName={getTileClassName}
+                    selectedHabitIdForStats={selectedHabitIdForStats}
+                    onSelectHabitForStats={handleSelectHabitForStats}
+                  />
+                </div>
+
+                {/* Stats Panel - Inline when habit selected */}
+                {selectedHabitObject && (
+                  <div className="lg:col-span-1">
+                    <StatsPanel
+                      habit={selectedHabitObject}
+                      habitLog={habitLog}
+                      onClose={() => setSelectedHabitIdForStats(null)}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Stats Panel */}
-            {selectedHabitObject && (
-              <div className="lg:col-span-1">
-                <StatsPanel
-                  habit={selectedHabitObject}
-                  habitLog={habitLog}
-                  onClose={() => setSelectedHabitIdForStats(null)}
+            {/* Right Sidebar - Daily Insight */}
+            <div className="xl:col-span-1">
+              <div className="sticky top-6">
+                <AiMotivationalMessage
+                  message={motivationalMessage}
+                  isLoading={isMotivationLoading}
                 />
               </div>
-            )}
+            </div>
           </div>
         </>
       )}
