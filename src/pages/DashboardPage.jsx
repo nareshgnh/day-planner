@@ -10,7 +10,6 @@ import { GlobalStatsDashboard } from "../components/GlobalStatsDashboard";
 import { AiMotivationalMessage } from "../components/AiMotivationalMessage";
 import { HabitList } from "../components/HabitList";
 import { StatsPanel } from "../components/StatsPanel";
-import { TodayQuickView } from "../components/TodayQuickView";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
 import { Button } from "../ui/Button";
 import {
@@ -279,29 +278,19 @@ const DashboardPage = ({
           {/* Top Row: Stats and Motivation */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <GlobalStatsDashboard globalStats={globalStats} />
-            </div>
-            <div className="lg:col-span-1">
-              <AiMotivationalMessage
-                message={motivationalMessage}
-                isLoading={isMotivationLoading}
-              />
-            </div>
-          </div>
-
-          {/* Quick Actions Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <TodayQuickView
+              <GlobalStatsDashboard 
+                globalStats={globalStats} 
                 habits={habits}
                 habitLog={habitLog}
                 updateHabitLog={updateHabitLog}
                 openModalForNewHabit={openModalForNewHabit}
               />
             </div>
-            <div className="lg:col-span-2">
-              {/* This could be used for weekly overview or other features in the future */}
-              <div className="h-full min-h-[200px]"></div>
+            <div className="lg:col-span-1">
+              <AiMotivationalMessage
+                message={motivationalMessage}
+                isLoading={isMotivationLoading}
+              />
             </div>
           </div>
 
