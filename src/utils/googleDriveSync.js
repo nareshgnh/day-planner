@@ -69,10 +69,38 @@ class GoogleDriveSync {
                   console.error("OAuth error:", response.error);
                   return;
                 }
+                // Store the token and set signed in state
+                this.storeAuthToken(response.access_token);
                 this.isSignedIn = true;
                 console.log("Successfully signed in to Google Drive");
               },
             });
+
+            // Check for existing valid token
+            const existingToken = this.getStoredAuthToken();
+            if (existingToken) {
+              try {
+                // Set the token for API calls
+                window.gapi.client.setToken({ access_token: existingToken });
+                this.isSignedIn = true;
+                console.log("Restored existing Google Drive session");
+
+                // Validate the token with a test API call
+                setTimeout(async () => {
+                  const isValid = await this.validateToken();
+                  if (!isValid) {
+                    console.log(
+                      "Restored token was invalid, requiring re-authentication"
+                    );
+                  }
+                }, 1000);
+              } catch (error) {
+                console.log(
+                  "Existing token invalid, will need to re-authenticate"
+                );
+                this.clearStoredAuthToken();
+              }
+            }
 
             console.log("Google Drive API initialized successfully");
             resolve();
@@ -151,6 +179,8 @@ class GoogleDriveSync {
             return;
           }
 
+          // Store the token and set signed in state
+          this.storeAuthToken(response.access_token);
           this.isSignedIn = true;
           console.log("Successfully signed in to Google Drive");
           resolve({ success: true });
@@ -173,6 +203,8 @@ class GoogleDriveSync {
         window.google.accounts.oauth2.revoke();
       }
 
+      // Clear stored token and sign out state
+      this.clearStoredAuthToken();
       this.isSignedIn = false;
       console.log("Successfully signed out from Google Drive");
 
@@ -180,6 +212,92 @@ class GoogleDriveSync {
     } catch (error) {
       console.error("Failed to sign out from Google Drive:", error);
       return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Store authentication token in localStorage
+   */
+  storeAuthToken(token) {
+    try {
+      const tokenData = {
+        access_token: token,
+        timestamp: Date.now(),
+        expires_in: 3600000, // 1 hour in milliseconds
+      };
+      localStorage.setItem(
+        "google_drive_auth_token",
+        JSON.stringify(tokenData)
+      );
+
+      // Set token for immediate API calls
+      window.gapi.client.setToken({ access_token: token });
+    } catch (error) {
+      console.error("Failed to store auth token:", error);
+    }
+  }
+
+  /**
+   * Get stored authentication token if valid
+   */
+  getStoredAuthToken() {
+    try {
+      const tokenData = localStorage.getItem("google_drive_auth_token");
+      if (!tokenData) return null;
+
+      const parsed = JSON.parse(tokenData);
+      const now = Date.now();
+
+      // Check if token is expired (tokens typically last 1 hour)
+      if (now - parsed.timestamp > parsed.expires_in) {
+        this.clearStoredAuthToken();
+        return null;
+      }
+
+      return parsed.access_token;
+    } catch (error) {
+      console.error("Failed to get stored auth token:", error);
+      this.clearStoredAuthToken();
+      return null;
+    }
+  }
+  /**
+   * Clear stored authentication token
+   */
+  clearStoredAuthToken() {
+    try {
+      localStorage.removeItem("google_drive_auth_token");
+
+      // Clear token from API client
+      if (window.gapi && window.gapi.client) {
+        window.gapi.client.setToken(null);
+      }
+    } catch (error) {
+      console.error("Failed to clear stored auth token:", error);
+    }
+  }
+
+  /**
+   * Validate current token by making a test API call
+   */
+  async validateToken() {
+    try {
+      if (!this.isSignedIn || !this.driveApi) {
+        return false;
+      }
+
+      // Make a simple API call to test if token is valid
+      await this.driveApi.files.list({
+        pageSize: 1,
+        fields: "files(id, name)",
+      });
+
+      return true;
+    } catch (error) {
+      console.log("Token validation failed, clearing stored token");
+      this.clearStoredAuthToken();
+      this.isSignedIn = false;
+      return false;
     }
   }
 
