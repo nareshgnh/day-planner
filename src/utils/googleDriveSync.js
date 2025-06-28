@@ -220,11 +220,31 @@ class GoogleDriveSync {
    */
   storeAuthToken(token) {
     try {
+      // Determine if this is a mobile/PWA environment for longer persistence
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+      const isPWA =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true ||
+        document.referrer.includes("android-app://");
+
+      // Set longer expiration for mobile/PWA (30 days), shorter for desktop (7 days)
+      const expiration =
+        isMobile || isPWA
+          ? 30 * 24 * 60 * 60 * 1000 // 30 days for mobile/PWA
+          : 7 * 24 * 60 * 60 * 1000; // 7 days for desktop
+
       const tokenData = {
         access_token: token,
         timestamp: Date.now(),
-        expires_in: 3600000, // 1 hour in milliseconds
+        expires_in: expiration,
+        device_type: isMobile ? "mobile" : "desktop",
+        is_pwa: isPWA,
+        user_agent: navigator.userAgent.substring(0, 100), // Store partial UA for debugging
       };
+
       localStorage.setItem(
         "google_drive_auth_token",
         JSON.stringify(tokenData)
@@ -232,6 +252,12 @@ class GoogleDriveSync {
 
       // Set token for immediate API calls
       window.gapi.client.setToken({ access_token: token });
+
+      console.log(
+        `Google Drive token stored for ${Math.round(
+          expiration / (24 * 60 * 60 * 1000)
+        )} days (${tokenData.device_type}${isPWA ? " PWA" : ""})`
+      );
     } catch (error) {
       console.error("Failed to store auth token:", error);
     }
@@ -248,12 +274,27 @@ class GoogleDriveSync {
       const parsed = JSON.parse(tokenData);
       const now = Date.now();
 
-      // Check if token is expired (tokens typically last 1 hour)
-      if (now - parsed.timestamp > parsed.expires_in) {
+      // Calculate how much time is left
+      const timeElapsed = now - parsed.timestamp;
+      const timeRemaining = parsed.expires_in - timeElapsed;
+      const daysRemaining = Math.round(timeRemaining / (24 * 60 * 60 * 1000));
+
+      // Check if token is expired
+      if (timeElapsed > parsed.expires_in) {
+        console.log(
+          `Google Drive token expired (was valid for ${Math.round(
+            parsed.expires_in / (24 * 60 * 60 * 1000)
+          )} days)`
+        );
         this.clearStoredAuthToken();
         return null;
       }
 
+      console.log(
+        `Google Drive token valid for ${daysRemaining} more days (${
+          parsed.device_type
+        }${parsed.is_pwa ? " PWA" : ""})`
+      );
       return parsed.access_token;
     } catch (error) {
       console.error("Failed to get stored auth token:", error);
@@ -294,9 +335,50 @@ class GoogleDriveSync {
 
       return true;
     } catch (error) {
-      console.log("Token validation failed, clearing stored token");
+      console.log("Token validation failed, will attempt to refresh");
+
+      // Try to refresh token if validation fails
+      const refreshed = await this.attemptTokenRefresh();
+      if (refreshed) {
+        return true;
+      }
+
+      console.log("Token refresh failed, clearing stored token");
       this.clearStoredAuthToken();
       this.isSignedIn = false;
+      return false;
+    }
+  }
+
+  /**
+   * Attempt to refresh the token silently
+   */
+  async attemptTokenRefresh() {
+    try {
+      if (!this.tokenClient) {
+        return false;
+      }
+
+      // Try to get a new token silently (won't show popup if user is already authenticated)
+      return new Promise((resolve) => {
+        this.tokenClient.callback = (response) => {
+          if (response.error || !response.access_token) {
+            resolve(false);
+            return;
+          }
+
+          // Store the new token
+          this.storeAuthToken(response.access_token);
+          this.isSignedIn = true;
+          console.log("Successfully refreshed Google Drive token");
+          resolve(true);
+        };
+
+        // Request token without forcing user interaction
+        this.tokenClient.requestAccessToken({ prompt: "" });
+      });
+    } catch (error) {
+      console.error("Failed to refresh token:", error);
       return false;
     }
   }
