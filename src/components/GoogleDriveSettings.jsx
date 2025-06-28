@@ -37,8 +37,8 @@ export const GoogleDriveSettings = ({ habits, habitLog, onDataRestore }) => {
     try {
       console.log("Starting Google Drive initialization...");
       console.log("Environment variables:", {
-        apiKey: process.env.REACT_APP_GOOGLE_API_KEY ? "SET" : "NOT SET",
-        clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID ? "SET" : "NOT SET",
+        apiKey: import.meta.env.VITE_GOOGLE_API_KEY ? "SET" : "NOT SET",
+        clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ? "SET" : "NOT SET",
       });
 
       const result = await googleDriveSync.initialize();

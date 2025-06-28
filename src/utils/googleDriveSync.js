@@ -29,10 +29,10 @@ class GoogleDriveSync {
         window.gapi.load("client:auth2", async () => {
           try {
             console.log("Initializing Google API with:", {
-              apiKey: process.env.REACT_APP_GOOGLE_API_KEY
+              apiKey: import.meta.env.VITE_GOOGLE_API_KEY
                 ? "***SET***"
                 : "NOT_SET",
-              clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID
+              clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID
                 ? "***SET***"
                 : "NOT_SET",
             });
@@ -40,18 +40,17 @@ class GoogleDriveSync {
             // Debug: Log actual values (remove this after testing)
             console.log("DEBUG - Actual env values:", {
               apiKey:
-                process.env.REACT_APP_GOOGLE_API_KEY?.substring(0, 10) + "...",
+                import.meta.env.VITE_GOOGLE_API_KEY?.substring(0, 10) + "...",
               clientId:
-                process.env.REACT_APP_GOOGLE_CLIENT_ID?.substring(0, 10) +
-                "...",
-              allEnvKeys: Object.keys(process.env).filter((k) =>
-                k.startsWith("REACT_APP_")
+                import.meta.env.VITE_GOOGLE_CLIENT_ID?.substring(0, 10) + "...",
+              allEnvKeys: Object.keys(import.meta.env).filter((k) =>
+                k.startsWith("VITE_")
               ),
             });
 
             await window.gapi.client.init({
-              apiKey: process.env.REACT_APP_GOOGLE_API_KEY,
-              clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+              apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
+              clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
               discoveryDocs: [
                 "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
               ],
@@ -363,8 +362,8 @@ export const setupInstructions = {
     "4. Create credentials (OAuth 2.0 Client ID)",
     "5. Add your domain to authorized origins",
     "6. Add these environment variables:",
-    "   REACT_APP_GOOGLE_API_KEY=your_api_key",
-    "   REACT_APP_GOOGLE_CLIENT_ID=your_client_id",
+    "   VITE_GOOGLE_API_KEY=your_api_key",
+    "   VITE_GOOGLE_CLIENT_ID=your_client_id",
     "7. Restart your development server",
   ],
 };
