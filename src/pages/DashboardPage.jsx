@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { GlobalStatsDashboard } from "../components/GlobalStatsDashboard";
 import { AiMotivationalMessage } from "../components/AiMotivationalMessage";
+import { TodaysHabitsPanel } from "../components/TodaysHabitsPanel";
 import { HabitList } from "../components/HabitList";
 import { StatsPanel } from "../components/StatsPanel";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
@@ -275,20 +276,22 @@ const DashboardPage = ({
             </div>
           </div>
 
-          {/* Main Content Grid - Improved Layout */}
+          {/* Improved Dashboard Layout */}
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            {/* Left Column - Progress & Daily Insight */}
+            {/* Left Main Content - 3/4 width */}
             <div className="xl:col-span-3 space-y-6">
-              {/* Progress Overview - Full Width */}
-              <GlobalStatsDashboard
-                globalStats={globalStats}
+              {/* Progress Overview - Compact Stats */}
+              <GlobalStatsDashboard globalStats={globalStats} />
+
+              {/* Today's Quick Actions */}
+              <TodaysHabitsPanel
                 habits={habits}
                 habitLog={habitLog}
                 updateHabitLog={updateHabitLog}
                 openModalForNewHabit={openModalForNewHabit}
               />
 
-              {/* Today's Habits List */}
+              {/* Main Habits List */}
               <div
                 className={`${
                   selectedHabitObject
@@ -327,7 +330,7 @@ const DashboardPage = ({
               </div>
             </div>
 
-            {/* Right Sidebar - Daily Insight */}
+            {/* Right Sidebar - 1/4 width */}
             <div className="xl:col-span-1">
               <div className="sticky top-6">
                 <AiMotivationalMessage
