@@ -1,5 +1,31 @@
 /* src/index.css */
 
+/* --- Mobile PWA Optimizations --- */
+.safe-area-padding-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Custom scrollbar for mobile */
+@media (max-width: 768px) {
+  .scrollbar-thin {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+  button,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}
+
 /* --- Styles for react-calendar-heatmap --- */
 .react-calendar-heatmap text {
   font-size: 0.6em; /* Smaller font size for labels */

@@ -102,7 +102,7 @@ const GlobalStatsDashboard = ({ globalStats }) => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2">
             <StatBox
               icon={Target}
               label="Completion Rate"

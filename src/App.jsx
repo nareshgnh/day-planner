@@ -36,6 +36,7 @@ import { useDarkMode } from "./hooks/useDarkMode";
 import { Header } from "./components/Header";
 import { HabitModal } from "./components/HabitModal";
 import { ChatPanel } from "./components/ChatPanel";
+import { BottomNavigation } from "./components/BottomNavigation";
 import { Button } from "./ui/Button";
 
 // Pages
@@ -60,8 +61,6 @@ import {
   ListChecks,
   LineChart,
   Settings as SettingsIcon,
-  Menu,
-  X as CloseIcon,
 } from "lucide-react";
 
 const habitsCollectionRef = collection(db, "habits");
@@ -102,7 +101,6 @@ function App() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [notificationPermission, setNotificationPermission] =
     useState("default");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsLoadingData(true);
@@ -850,11 +848,8 @@ function App() {
         />
 
         <div className="flex flex-grow overflow-hidden">
-          <nav
-            className={`fixed lg:static lg:translate-x-0 inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out ${
-              isMobileMenuOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"
-            } lg:flex flex-col space-y-1 p-4`}
-          >
+          {/* Desktop Navigation Sidebar */}
+          <nav className="hidden lg:flex flex-col space-y-1 p-4 w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800">
             <NavItem to="/" icon={LayoutDashboard}>
               Dashboard
             </NavItem>
@@ -867,27 +862,10 @@ function App() {
             <NavItem to="/settings" icon={SettingsIcon}>
               Settings
             </NavItem>
-            {isMobileMenuOpen && (
-              <div className="pt-4 border-t dark:border-gray-700 mt-auto">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full"
-                >
-                  Close Menu
-                </Button>
-              </div>
-            )}
           </nav>
 
-          {isMobileMenuOpen && (
-            <div
-              className="fixed inset-0 z-30 bg-black/30 lg:hidden"
-              onClick={() => setIsMobileMenuOpen(false)}
-            ></div>
-          )}
-
-          <main className="flex-grow flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent p-3 sm:p-4 md:p-6 pb-20">
+          {/* Main Content Area */}
+          <main className="flex-grow flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent p-3 sm:p-4 md:p-6 pb-20 lg:pb-6">
             {isLoadingData && (
               <div className="fixed inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-50">
                 <p className="text-lg font-semibold animate-pulse dark:text-white">
@@ -939,16 +917,11 @@ function App() {
           </main>
         </div>
 
-        <div className="fixed bottom-6 right-6 z-30 flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:space-x-3 items-center">
-          <Button
-            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            variant="outline"
-            size="icon"
-            className="lg:hidden rounded-full w-12 h-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700"
-            aria-label="Toggle navigation menu"
-          >
-            {isMobileMenuOpen ? <CloseIcon size={22} /> : <Menu size={22} />}
-          </Button>
+        {/* Mobile Bottom Navigation */}
+        <BottomNavigation />
+
+        {/* Chat Button - Repositioned for mobile */}
+        <div className="fixed bottom-20 right-4 z-40 flex flex-col space-y-3 lg:bottom-6 lg:right-6">
           {!isChatOpen && (
             <Button
               onClick={toggleChat}
