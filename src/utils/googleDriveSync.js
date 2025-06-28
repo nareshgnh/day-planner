@@ -10,6 +10,7 @@ class GoogleDriveSync {
     this.isSignedIn = false;
     this.gapi = null;
     this.driveApi = null;
+    this.tokenClient = null;
     this.appFolderName = "HabitTrackerBackups";
     this.backupFileName = "habit-data-backup.json";
   }
@@ -20,13 +21,14 @@ class GoogleDriveSync {
    */
   async initialize() {
     try {
-      // Load Google API script
-      if (!window.gapi) {
+      // Load Google API and GIS scripts
+      if (!window.gapi || !window.google) {
         await this.loadGoogleApiScript();
       }
 
+      // Initialize GAPI client
       await new Promise((resolve, reject) => {
-        window.gapi.load("client:auth2", async () => {
+        window.gapi.load("client", async () => {
           try {
             console.log("Initializing Google API with:", {
               apiKey: import.meta.env.VITE_GOOGLE_API_KEY
@@ -50,29 +52,32 @@ class GoogleDriveSync {
 
             await window.gapi.client.init({
               apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
-              clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
               discoveryDocs: [
                 "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
               ],
-              scope: "https://www.googleapis.com/auth/drive.file",
             });
 
             this.gapi = window.gapi;
             this.driveApi = window.gapi.client.drive;
 
-            // Check if user is already signed in
-            const authInstance = this.gapi.auth2.getAuthInstance();
-            this.isSignedIn = authInstance.isSignedIn.get();
+            // Initialize Google Identity Services for OAuth
+            this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+              client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+              scope: "https://www.googleapis.com/auth/drive.file",
+              callback: (response) => {
+                if (response.error) {
+                  console.error("OAuth error:", response.error);
+                  return;
+                }
+                this.isSignedIn = true;
+                console.log("Successfully signed in to Google Drive");
+              },
+            });
 
             console.log("Google Drive API initialized successfully");
             resolve();
           } catch (error) {
             console.error("Google API init error:", error);
-            if (error.error === "idpiframe_initialization_failed") {
-              console.error(
-                "This usually means the Google Drive API is not enabled or there are CORS issues"
-              );
-            }
             reject(error);
           }
         });
@@ -90,16 +95,42 @@ class GoogleDriveSync {
    */
   loadGoogleApiScript() {
     return new Promise((resolve, reject) => {
-      if (window.gapi) {
+      if (window.gapi && window.google) {
         resolve();
         return;
       }
 
-      const script = document.createElement("script");
-      script.src = "https://apis.google.com/js/api.js";
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
+      let scriptsLoaded = 0;
+      const totalScripts = 2;
+
+      const checkComplete = () => {
+        scriptsLoaded++;
+        if (scriptsLoaded === totalScripts) {
+          resolve();
+        }
+      };
+
+      // Load Google API script
+      if (!window.gapi) {
+        const gapiScript = document.createElement("script");
+        gapiScript.src = "https://apis.google.com/js/api.js";
+        gapiScript.onload = checkComplete;
+        gapiScript.onerror = reject;
+        document.head.appendChild(gapiScript);
+      } else {
+        checkComplete();
+      }
+
+      // Load Google Identity Services script
+      if (!window.google) {
+        const gisScript = document.createElement("script");
+        gisScript.src = "https://accounts.google.com/gsi/client";
+        gisScript.onload = checkComplete;
+        gisScript.onerror = reject;
+        document.head.appendChild(gisScript);
+      } else {
+        checkComplete();
+      }
     });
   }
 
@@ -108,17 +139,25 @@ class GoogleDriveSync {
    */
   async signIn() {
     try {
-      if (!this.gapi) {
+      if (!this.tokenClient) {
         throw new Error("Google API not initialized");
       }
 
-      const authInstance = this.gapi.auth2.getAuthInstance();
-      await authInstance.signIn();
+      return new Promise((resolve) => {
+        this.tokenClient.callback = (response) => {
+          if (response.error) {
+            console.error("Failed to sign in to Google Drive:", response.error);
+            resolve({ success: false, error: response.error });
+            return;
+          }
 
-      this.isSignedIn = true;
-      console.log("Successfully signed in to Google Drive");
+          this.isSignedIn = true;
+          console.log("Successfully signed in to Google Drive");
+          resolve({ success: true });
+        };
 
-      return { success: true };
+        this.tokenClient.requestAccessToken();
+      });
     } catch (error) {
       console.error("Failed to sign in to Google Drive:", error);
       return { success: false, error: error.message };
@@ -130,12 +169,9 @@ class GoogleDriveSync {
    */
   async signOut() {
     try {
-      if (!this.gapi) {
-        throw new Error("Google API not initialized");
+      if (window.google && window.google.accounts.oauth2.hasGrantedAnyScope) {
+        window.google.accounts.oauth2.revoke();
       }
-
-      const authInstance = this.gapi.auth2.getAuthInstance();
-      await authInstance.signOut();
 
       this.isSignedIn = false;
       console.log("Successfully signed out from Google Drive");
