@@ -2,16 +2,9 @@
 import React, { useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { GoogleDriveSettings } from "../components/GoogleDriveSettings";
 import { Settings, Upload, Download } from "lucide-react";
 
-const SettingsPage = ({
-  habits,
-  habitLog,
-  exportData,
-  importData,
-  onDataRestore,
-}) => {
+const SettingsPage = ({ exportData, importData }) => {
   const fileInputRef = useRef(null);
 
   const handleImportClick = () => {
@@ -92,13 +85,6 @@ const SettingsPage = ({
           </div>
         </CardContent>
       </Card>
-
-      {/* Google Drive Backup Settings */}
-      <GoogleDriveSettings
-        habits={habits}
-        habitLog={habitLog}
-        onDataRestore={onDataRestore}
-      />
 
       {/* Add more settings sections as needed */}
     </div>
