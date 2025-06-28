@@ -7,14 +7,20 @@ import {
   Zap,
   Award,
   AlertCircle,
+  Target,
+  Calendar,
+  BarChart3,
 } from "lucide-react";
 
 export const GlobalStatsDashboard = ({ globalStats }) => {
   if (!globalStats) {
     return (
-      <Card className="bg-white/80 dark:bg-gray-950/80 mb-4">
-        <CardContent className="pt-3 pb-3 text-center text-gray-500 text-xs">
-          Loading daily snapshot...
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 border-0 shadow-lg">
+        <CardContent className="pt-6 pb-6 text-center text-gray-500 text-sm">
+          <div className="animate-pulse flex items-center justify-center gap-2">
+            <BarChart3 size={20} className="text-indigo-400" />
+            <span>Loading your daily insights...</span>
+          </div>
         </CardContent>
       </Card>
     );
@@ -31,63 +37,120 @@ export const GlobalStatsDashboard = ({ globalStats }) => {
     return `${roundedPercent}%`;
   };
 
-  const StatBox = ({ icon: Icon, label, value, valueSubtext, iconColorClass, bgColorClass }) => (
-    <div className={`flex flex-col items-center justify-center p-2 sm:p-2.5 rounded-lg text-center shadow-sm hover:shadow-md transition-shadow ${bgColorClass}`}>
-      <Icon size={18} className={`mb-0.5 ${iconColorClass}`} />
-      <span className="text-[10px] sm:text-xs font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+  const getCompletionColor = (rate) => {
+    if (rate >= 0.8) return "text-green-600 dark:text-green-400";
+    if (rate >= 0.6) return "text-yellow-600 dark:text-yellow-400";
+    return "text-red-600 dark:text-red-400";
+  };
+
+  const getCompletionBg = (rate) => {
+    if (rate >= 0.8)
+      return "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800";
+    if (rate >= 0.6)
+      return "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800";
+    return "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800";
+  };
+
+  const getMotivationalEmoji = (rate) => {
+    if (rate >= 0.9) return "🔥";
+    if (rate >= 0.8) return "🎯";
+    if (rate >= 0.6) return "💪";
+    if (rate >= 0.4) return "📈";
+    return "🌱";
+  };
+
+  const StatBox = ({
+    icon: Icon,
+    label,
+    value,
+    valueSubtext,
+    iconColorClass,
+    bgColorClass,
+    isMain = false,
+    emoji,
+  }) => (
+    <div
+      className={`flex flex-col items-center justify-center p-4 rounded-xl text-center shadow-sm hover:shadow-md transition-all duration-200 border ${bgColorClass} ${
+        isMain ? "col-span-2 sm:col-span-1" : ""
+      } group hover:scale-105 transform`}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <Icon
+          size={isMain ? 28 : 24}
+          className={`${iconColorClass} group-hover:scale-110 transition-transform`}
+        />
+        {emoji && <span className="text-lg">{emoji}</span>}
+      </div>
+      <span className="text-xs font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap uppercase tracking-wide">
         {label}
       </span>
-      <span className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mt-0 truncate w-full px-0.5">
+      <span
+        className={`${
+          isMain ? "text-2xl" : "text-xl"
+        } font-bold text-gray-900 dark:text-gray-100 mt-1 truncate w-full px-1`}
+      >
         {value}
       </span>
       {valueSubtext && (
-        <span className="block text-[9px] sm:text-[10px] text-gray-600 dark:text-gray-400 leading-tight break-words truncate w-full px-0.5"
-              title={valueSubtext}>
-          ({valueSubtext})
+        <span
+          className="block text-xs text-gray-600 dark:text-gray-400 mt-1 break-words truncate w-full px-1"
+          title={valueSubtext}
+        >
+          {valueSubtext}
         </span>
       )}
     </div>
   );
 
   return (
-    <Card className="bg-white/70 dark:bg-gray-950/70 mb-3 md:mb-4 backdrop-blur-sm">
-      <CardHeader className="pb-2 pt-3 px-3 sm:px-4">
-        <CardTitle className="text-sm md:text-base flex items-center gap-1.5 font-semibold">
-          <TrendingUp size={18} className="text-indigo-500" />
-          Daily Snapshot
+    <Card className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border-0 shadow-lg hover:shadow-xl transition-shadow duration-200">
+      <CardHeader className="pb-4 pt-6 px-6">
+        <CardTitle className="text-lg md:text-xl flex items-center gap-2 font-bold text-gray-800 dark:text-gray-100">
+          <BarChart3
+            size={24}
+            className="text-indigo-600 dark:text-indigo-400"
+          />
+          Today's Progress Overview
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 pb-3 px-3 sm:px-4">
+      <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-6 px-6">
         <StatBox
-          icon={CheckCircle}
-          label="Today's Rate"
+          icon={Target}
+          label="Completion Rate"
           value={formatPercent(overallCompletionRate)}
-          iconColorClass="text-blue-600 dark:text-blue-400"
-          bgColorClass="bg-blue-50 dark:bg-blue-900/30"
+          iconColorClass={getCompletionColor(overallCompletionRate)}
+          bgColorClass={getCompletionBg(overallCompletionRate)}
+          isMain={true}
+          emoji={getMotivationalEmoji(overallCompletionRate)}
         />
         <StatBox
           icon={Zap}
-          label="Current Streak"
-          value={longestStreak ? `${longestStreak.length}d` : "N/A"}
+          label="Best Streak"
+          value={
+            longestStreak ? `${longestStreak.length} days` : "Start today!"
+          }
           valueSubtext={longestStreak?.habitTitle}
-          iconColorClass="text-yellow-600 dark:text-yellow-400"
-          bgColorClass="bg-yellow-50 dark:bg-yellow-900/30"
+          iconColorClass="text-orange-600 dark:text-orange-400"
+          bgColorClass="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 border"
+          emoji={longestStreak && longestStreak.length >= 7 ? "⚡" : "🎯"}
         />
         <StatBox
           icon={Award}
-          label="Best Habit"
-          value={bestHabit ? bestHabit.title : "N/A"}
+          label="Top Performer"
+          value={bestHabit ? bestHabit.title : "No data yet"}
           valueSubtext={bestHabit ? formatPercent(bestHabit.score) : null}
-          iconColorClass="text-green-600 dark:text-green-400"
-          bgColorClass="bg-green-50 dark:bg-green-900/30"
+          iconColorClass="text-emerald-600 dark:text-emerald-400"
+          bgColorClass="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 border"
+          emoji={bestHabit ? "🏆" : "📊"}
         />
         <StatBox
           icon={AlertCircle}
-          label="Needs Focus"
-          value={worstHabit ? worstHabit.title : "N/A"}
-          valueSubtext={worstHabit ? `Rate: ${formatPercent(worstHabit.score)}` : null}
-          iconColorClass="text-red-600 dark:text-red-400"
-          bgColorClass="bg-red-50 dark:bg-red-900/30"
+          label="Needs Attention"
+          value={worstHabit ? worstHabit.title : "All good!"}
+          valueSubtext={worstHabit ? formatPercent(worstHabit.score) : null}
+          iconColorClass="text-rose-600 dark:text-rose-400"
+          bgColorClass="bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 border"
+          emoji={worstHabit ? "⚠️" : "✅"}
         />
       </CardContent>
     </Card>

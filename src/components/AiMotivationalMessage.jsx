@@ -1,21 +1,41 @@
 // src/components/AiMotivationalMessage.jsx
-import React from 'react';
-import { Loader2 } from 'lucide-react'; // Optional: for loading spinner
+import React from "react";
+import { Loader2, Sparkles, Heart } from "lucide-react";
+import { Card, CardContent } from "../ui/Card";
 
 export const AiMotivationalMessage = ({ message, isLoading }) => {
   return (
-    // *** Corrected Spacing: Reduced padding, removed margin ***
-    <div className="p-3 rounded-lg bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/50 dark:via-purple-900/50 dark:to-pink-900/50 shadow-sm border border-gray-200 dark:border-gray-700/50">
-      {isLoading ? (
-        <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <Loader2 size={16} className="animate-spin" />
-          <span>Loading daily insight...</span>
+    <Card className="bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-900/30 dark:via-blue-900/30 dark:to-indigo-900/30 border-purple-200 dark:border-purple-700/50 shadow-lg hover:shadow-xl transition-shadow duration-200">
+      <CardContent className="p-6">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-1">
+            {isLoading ? (
+              <Loader2 size={20} className="animate-spin text-purple-500" />
+            ) : (
+              <Sparkles size={20} className="text-purple-500 animate-pulse" />
+            )}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-sm font-semibold text-purple-800 dark:text-purple-300 uppercase tracking-wide">
+                Daily Insight
+              </h3>
+              <Heart size={14} className="text-red-400" />
+            </div>
+            {isLoading ? (
+              <div className="space-y-2">
+                <div className="h-3 bg-purple-200 dark:bg-purple-700 rounded animate-pulse"></div>
+                <div className="h-3 bg-purple-200 dark:bg-purple-700 rounded w-3/4 animate-pulse"></div>
+              </div>
+            ) : (
+              <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed italic">
+                {message ||
+                  "Keep tracking your habits and building a better you!"}
+              </p>
+            )}
+          </div>
         </div>
-      ) : (
-        <p className="text-center text-sm md:text-base text-gray-800 dark:text-gray-200 italic">
-          {message || "Keep tracking your habits!"} {/* Fallback message */}
-        </p>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };

@@ -5,12 +5,14 @@ import React, {
   useCallback,
   useRef,
   useEffect,
-} from "react"; // Added useEffect here
+} from "react";
 import { GlobalStatsDashboard } from "../components/GlobalStatsDashboard";
 import { AiMotivationalMessage } from "../components/AiMotivationalMessage";
 import { HabitList } from "../components/HabitList";
 import { StatsPanel } from "../components/StatsPanel";
-import { QuickActionsPanel } from "../components/QuickActionsPanel";
+import { TodayQuickView } from "../components/TodayQuickView";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
+import { Button } from "../ui/Button";
 import {
   formatDate,
   parseDate,
@@ -18,6 +20,7 @@ import {
 } from "../utils/helpers";
 import { calculateGlobalStats } from "../utils/stats";
 import { fetchDailyMotivation } from "../utils/api";
+import { Plus, Target, Calendar, BarChart3, Zap } from "lucide-react";
 
 const DashboardPage = ({
   habits,
@@ -33,6 +36,34 @@ const DashboardPage = ({
   const [motivationalMessage, setMotivationalMessage] = useState("");
   const [isMotivationLoading, setIsMotivationLoading] = useState(true);
   const previousTodaysLogRef = useRef(null);
+
+  // Calculate today's progress
+  const todayProgress = useMemo(() => {
+    const today = new Date();
+    const todayStr = formatDate(today);
+    const todaysLog = habitLog[todayStr] || {};
+    const todaysHabits = habits.filter((habit) =>
+      isHabitScheduledForDate(habit, today)
+    );
+
+    if (todaysHabits.length === 0) {
+      return { total: 0, completed: 0, percentage: 0, remaining: 0 };
+    }
+
+    const completed = todaysHabits.filter((habit) => {
+      const status = todaysLog[habit.id];
+      return habit.isMeasurable
+        ? typeof status === "number" && habit.goal && status >= habit.goal
+        : status === true;
+    }).length;
+
+    return {
+      total: todaysHabits.length,
+      completed,
+      percentage: Math.round((completed / todaysHabits.length) * 100),
+      remaining: todaysHabits.length - completed,
+    };
+  }, [habits, habitLog]);
 
   // Calendar Tile Styling Callback
   const getTileClassName = useCallback(
@@ -155,61 +186,165 @@ const DashboardPage = ({
   }, [isLoadingData, habitLog, loadDailyMotivation]); // useEffect is now defined
 
   return (
-    <div className="flex flex-col gap-3 md:gap-4 h-full">
-      {!isLoadingData && habits.length > 0 && (
-        <GlobalStatsDashboard globalStats={globalStats} />
-      )}
-      {!isLoadingData && habits.length > 0 && (
-        <AiMotivationalMessage
-          message={motivationalMessage}
-          isLoading={isMotivationLoading}
-        />
-      )}
-      <div
-        className={`grid grid-cols-1 ${
-          selectedHabitObject ? "lg:grid-cols-3" : "lg:grid-cols-4"
-        } gap-4 md:gap-6 flex-grow`}
-      >
-        <div
-          className={`space-y-4 md:space-y-6 flex flex-col ${
-            selectedHabitObject ? "lg:col-span-2" : "lg:col-span-3"
-          }`}
-        >
-          <HabitList
-            habits={habits}
-            habitLog={habitLog}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            updateHabitLog={updateHabitLog}
-            openModalForEditHabit={openModalForEditHabit}
-            handleDeleteHabitCallback={handleDeleteHabitCallback}
-            openModalForNewHabit={openModalForNewHabit}
-            getTileClassName={getTileClassName}
-            selectedHabitIdForStats={selectedHabitIdForStats}
-            onSelectHabitForStats={handleSelectHabitForStats}
-          />
+    <div className="flex flex-col gap-6 h-full">
+      {/* Empty State - No habits */}
+      {!isLoadingData && habits.length === 0 && (
+        <div className="flex-1 flex items-center justify-center min-h-[500px]">
+          <Card className="max-w-md mx-auto text-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 border-0 shadow-xl">
+            <CardContent className="pt-8 pb-8">
+              <div className="mb-6">
+                <Target className="mx-auto h-16 w-16 text-indigo-500 mb-4" />
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  Welcome to Your Habit Tracker!
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  Start building positive habits today. Create your first habit
+                  and begin your journey to a better you.
+                </p>
+              </div>
+              <Button
+                onClick={openModalForNewHabit}
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg px-8 py-3 text-lg"
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                Create Your First Habit
+              </Button>
+            </CardContent>
+          </Card>
         </div>
+      )}
 
-        {/* Quick Actions Panel - Always visible */}
-        <div className="lg:col-span-1">
-          <QuickActionsPanel
-            habits={habits}
-            habitLog={habitLog}
-            selectedDate={selectedDate}
-            updateHabitLog={updateHabitLog}
-          />
+      {/* Loading State */}
+      {isLoadingData && (
+        <div className="flex-1 flex items-center justify-center min-h-[500px]">
+          <Card className="max-w-md mx-auto text-center">
+            <CardContent className="pt-8 pb-8">
+              <div className="animate-pulse space-y-4">
+                <div className="h-16 w-16 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mx-auto w-3/4"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mx-auto w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+      )}
 
-        {selectedHabitObject && (
-          <div className="lg:col-span-1">
-            <StatsPanel
-              habit={selectedHabitObject}
-              habitLog={habitLog}
-              onClose={() => setSelectedHabitIdForStats(null)}
-            />
+      {/* Main Dashboard - Has habits */}
+      {!isLoadingData && habits.length > 0 && (
+        <>
+          {/* Welcome & Today's Progress Header */}
+          <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-xl p-6 border border-indigo-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+                  Good{" "}
+                  {new Date().getHours() < 12
+                    ? "Morning"
+                    : new Date().getHours() < 18
+                    ? "Afternoon"
+                    : "Evening"}
+                  ! 👋
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {todayProgress.total === 0
+                    ? "No habits scheduled for today. Time to plan ahead!"
+                    : `You have ${todayProgress.remaining} ${
+                        todayProgress.remaining === 1 ? "habit" : "habits"
+                      } remaining today`}
+                </p>
+              </div>
+              {todayProgress.total > 0 && (
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                      {todayProgress.percentage}%
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      Complete
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                      {todayProgress.completed}/{todayProgress.total}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      Done
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Top Row: Stats and Motivation */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <GlobalStatsDashboard globalStats={globalStats} />
+            </div>
+            <div className="lg:col-span-1">
+              <AiMotivationalMessage
+                message={motivationalMessage}
+                isLoading={isMotivationLoading}
+              />
+            </div>
+          </div>
+
+          {/* Quick Actions Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <TodayQuickView
+                habits={habits}
+                habitLog={habitLog}
+                updateHabitLog={updateHabitLog}
+                openModalForNewHabit={openModalForNewHabit}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              {/* This could be used for weekly overview or other features in the future */}
+              <div className="h-full min-h-[200px]"></div>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div
+            className={`grid grid-cols-1 ${
+              selectedHabitObject ? "lg:grid-cols-3" : "lg:grid-cols-1"
+            } gap-6 flex-grow`}
+          >
+            {/* Habit List */}
+            <div
+              className={`${
+                selectedHabitObject ? "lg:col-span-2" : "lg:col-span-1"
+              }`}
+            >
+              <HabitList
+                habits={habits}
+                habitLog={habitLog}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                updateHabitLog={updateHabitLog}
+                openModalForEditHabit={openModalForEditHabit}
+                handleDeleteHabitCallback={handleDeleteHabitCallback}
+                openModalForNewHabit={openModalForNewHabit}
+                getTileClassName={getTileClassName}
+                selectedHabitIdForStats={selectedHabitIdForStats}
+                onSelectHabitForStats={handleSelectHabitForStats}
+              />
+            </div>
+
+            {/* Stats Panel */}
+            {selectedHabitObject && (
+              <div className="lg:col-span-1">
+                <StatsPanel
+                  habit={selectedHabitObject}
+                  habitLog={habitLog}
+                  onClose={() => setSelectedHabitIdForStats(null)}
+                />
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };
