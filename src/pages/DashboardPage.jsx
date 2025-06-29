@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { GlobalStatsDashboard } from "../components/GlobalStatsDashboard";
 import { AiMotivationalMessage } from "../components/AiMotivationalMessage";
+import { RewardsPanel } from "../components/RewardsPanel";
 import { HabitList } from "../components/HabitList";
 import { StatsPanel } from "../components/StatsPanel";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
@@ -302,12 +303,17 @@ const DashboardPage = ({
             </div>
 
             {/* Right Sidebar - 1/4 width */}
-            <div className="xl:col-span-1">
-              <div className="sticky top-6">
+            <div className="xl:col-span-1 space-y-4">
+              <div className="sticky top-6 space-y-4">
                 <AiMotivationalMessage
                   message={motivationalMessage}
                   isLoading={isMotivationLoading}
                 />
+
+                {/* Rewards Panel - Mobile: full width, Desktop: sidebar */}
+                <div className="xl:block">
+                  <RewardsPanel habits={habits} habitLog={habitLog} />
+                </div>
               </div>
             </div>
           </div>

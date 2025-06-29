@@ -1,6 +1,7 @@
 // src/pages/AnalyticsPage.jsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
+import { ChallengesPanel } from "../components/ChallengesPanel";
 import {
   LineChart,
   BarChart3,
@@ -40,6 +41,12 @@ ChartJS.register(
 );
 
 const AnalyticsPage = ({ habits, habitLog }) => {
+  const [activeChallenges, setActiveChallenges] = useState([]);
+
+  const handleStartChallenge = (challenge) => {
+    setActiveChallenges((prev) => [...prev, challenge]);
+    // In a real app, this would save to Firebase/backend
+  };
   // Add error handling
   console.log("Analytics page rendering with:", {
     habitsCount: habits?.length,
@@ -464,6 +471,16 @@ const AnalyticsPage = ({ habits, habitLog }) => {
         </div>
       </div>
       */}
+
+      {/* Challenges Section */}
+      <div className="space-y-6">
+        <ChallengesPanel
+          habits={habits}
+          habitLog={habitLog}
+          activeChallenges={activeChallenges}
+          onStartChallenge={handleStartChallenge}
+        />
+      </div>
     </div>
   );
 };

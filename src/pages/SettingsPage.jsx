@@ -1,11 +1,18 @@
 // src/pages/SettingsPage.jsx
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { Settings, Upload, Download } from "lucide-react";
+import { NotificationSettings } from "../components/NotificationSettings";
+import { Settings, Upload, Download, Bell, Database } from "lucide-react";
 
-const SettingsPage = ({ exportData, importData }) => {
+const SettingsPage = ({ exportData, importData, habits = [] }) => {
   const fileInputRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("data");
+
+  const handleUpdateHabitReminders = (reminders) => {
+    // This would typically save to your backend/Firebase
+    console.log("Updated habit reminders:", reminders);
+  };
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
