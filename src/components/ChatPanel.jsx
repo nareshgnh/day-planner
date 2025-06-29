@@ -10,7 +10,16 @@ import {
 } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
-import { MessageSquare, Bot, User, X, Mic, MicOff, Send, Sparkles } from "lucide-react";
+import {
+  MessageSquare,
+  Bot,
+  User,
+  X,
+  Mic,
+  MicOff,
+  Send,
+  Sparkles,
+} from "lucide-react";
 
 export const ChatPanel = ({
   isOpen,
@@ -65,7 +74,7 @@ export const ChatPanel = ({
         onClick={onClose}
         aria-hidden="true"
       ></div>
-      
+
       {/* Chat Panel Container - positioned from bottom, 75% height */}
       <div
         className={`fixed bottom-0 right-0 h-[75vh] w-full max-w-md lg:max-w-sm xl:max-w-md bg-gray-50 dark:bg-gray-900 shadow-2xl z-30 transform transition-transform duration-300 ease-in-out rounded-t-2xl border-t border-l border-gray-200 dark:border-gray-700 flex flex-col ${
@@ -82,7 +91,10 @@ export const ChatPanel = ({
               <Sparkles size={18} className="text-white" />
             </div>
             <div>
-              <h2 id="chat-title" className="font-semibold text-gray-900 dark:text-white">
+              <h2
+                id="chat-title"
+                className="font-semibold text-gray-900 dark:text-white"
+              >
                 Habit Assistant
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -106,13 +118,17 @@ export const ChatPanel = ({
           {chatHistory.length === 0 && (
             <div className="text-center py-8">
               <div className="p-3 mx-auto w-fit rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 mb-4">
-                <MessageSquare size={24} className="text-indigo-600 dark:text-indigo-400" />
+                <MessageSquare
+                  size={24}
+                  className="text-indigo-600 dark:text-indigo-400"
+                />
               </div>
               <h3 className="font-medium text-gray-900 dark:text-white mb-2">
                 Welcome to your Habit Assistant!
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-                Ask me anything about your habits, get suggestions, or track your progress.
+                Ask me anything about your habits, get suggestions, or track
+                your progress.
               </p>
             </div>
           )}
@@ -125,7 +141,11 @@ export const ChatPanel = ({
               }`}
             >
               {/* Avatar */}
-              <div className={`flex-shrink-0 ${msg.sender === "user" ? "order-2" : ""}`}>
+              <div
+                className={`flex-shrink-0 ${
+                  msg.sender === "user" ? "order-2" : ""
+                }`}
+              >
                 {msg.sender === "bot" ? (
                   <div className="p-1.5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600">
                     <Bot size={16} className="text-white" />
@@ -145,20 +165,28 @@ export const ChatPanel = ({
                     : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-md"
                 }`}
               >
-                <div className={`text-sm leading-relaxed ${
-                  msg.sender === "user" ? "text-white" : ""
-                }`}>
+                <div
+                  className={`text-sm leading-relaxed ${
+                    msg.sender === "user" ? "text-white" : ""
+                  }`}
+                >
                   {msg.sender === "bot" ? (
                     <ReactMarkdown
                       components={{
                         p: ({ children }) => (
-                          <p className="my-1 first:mt-0 last:mb-0">{children}</p>
+                          <p className="my-1 first:mt-0 last:mb-0">
+                            {children}
+                          </p>
                         ),
                         ul: ({ children }) => (
-                          <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>
+                          <ul className="list-disc list-inside my-2 space-y-1">
+                            {children}
+                          </ul>
                         ),
                         ol: ({ children }) => (
-                          <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>
+                          <ol className="list-decimal list-inside my-2 space-y-1">
+                            {children}
+                          </ol>
                         ),
                         li: ({ children }) => (
                           <li className="text-sm">{children}</li>
@@ -208,8 +236,14 @@ export const ChatPanel = ({
                 <div className="flex items-center gap-2">
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
                   </div>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     Assistant is thinking...
@@ -218,7 +252,7 @@ export const ChatPanel = ({
               </div>
             </div>
           )}
-          
+
           <div ref={chatMessagesEndRef} />
         </div>
 
@@ -243,7 +277,7 @@ export const ChatPanel = ({
                 disabled={isChatLoading && !awaitingConfirmation}
                 aria-label="Chat input"
               />
-              
+
               {/* Mic Button */}
               <Button
                 variant="ghost"
@@ -251,17 +285,19 @@ export const ChatPanel = ({
                 onClick={handleMicClick}
                 disabled={isChatLoading}
                 className={`absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full ${
-                  isListening 
-                    ? "text-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse" 
+                  isListening
+                    ? "text-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse"
                     : "text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
                 }`}
                 title={isListening ? "Stop Listening" : "Start Listening"}
-                aria-label={isListening ? "Stop listening" : "Start voice input"}
+                aria-label={
+                  isListening ? "Stop listening" : "Start voice input"
+                }
               >
                 {isListening ? <MicOff size={16} /> : <Mic size={16} />}
               </Button>
             </div>
-            
+
             {/* Send Button */}
             <Button
               size="icon"
