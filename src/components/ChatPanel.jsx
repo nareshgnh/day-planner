@@ -75,9 +75,9 @@ export const ChatPanel = ({
         aria-hidden="true"
       ></div>
 
-      {/* Chat Panel Container - positioned from bottom, 75% height */}
+      {/* Chat Panel Container - positioned from bottom, 75% height, with mobile bottom nav spacing */}
       <div
-        className={`fixed bottom-0 right-0 h-[75vh] w-full max-w-md lg:max-w-sm xl:max-w-md bg-gray-50 dark:bg-gray-900 shadow-2xl z-30 transform transition-transform duration-300 ease-in-out rounded-t-2xl border-t border-l border-gray-200 dark:border-gray-700 flex flex-col ${
+        className={`fixed bottom-20 lg:bottom-0 right-0 h-[75vh] w-full max-w-md lg:max-w-sm xl:max-w-md bg-gray-50 dark:bg-gray-900 shadow-2xl z-30 transform transition-transform duration-300 ease-in-out rounded-t-2xl border-t border-l border-gray-200 dark:border-gray-700 flex flex-col ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
