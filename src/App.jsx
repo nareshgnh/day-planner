@@ -37,6 +37,7 @@ import { Header } from "./components/Header";
 import { HabitModal } from "./components/HabitModal";
 import { ChatPanel } from "./components/ChatPanel";
 import { BottomNavigation } from "./components/BottomNavigation";
+import { ToastContainer, useToast } from "./components/Toast";
 import { Button } from "./ui/Button";
 
 // Pages
@@ -101,6 +102,9 @@ function App() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [notificationPermission, setNotificationPermission] =
     useState("default");
+
+  // Toast notifications
+  const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
 
   useEffect(() => {
     setIsLoadingData(true);
@@ -265,14 +269,20 @@ function App() {
 
   const handleDeleteHabitCallback = useCallback(async (id) => {
     if (!id) return;
+    
+    // Find the habit name for the notification
+    const habit = habits.find(h => h.id === id);
+    const habitName = habit?.title || "Habit";
+    
     const dR = doc(db, "habits", id);
     try {
       await deleteDoc(dR);
+      showSuccess(`"${habitName}" deleted successfully! 🗑️`, 4000);
     } catch (e) {
       console.error(e);
-      alert("Failed to delete habit.");
+      showError("Failed to delete habit. Please try again.", 5000);
     }
-  }, []);
+  }, [habits, showSuccess, showError]);
 
   const updateHabitLog = useCallback(async (habitId, date, value) => {
     const dateStr = formatDate(date);
@@ -353,11 +363,26 @@ function App() {
       "- Calling closeHabitModal."
     );
     if (success) {
-      closeHabitModal();
+      const habitName = habitModalData.title || "Habit";
+      const isEditing = !!editingHabit;
+      
+      // Show success notification
+      showSuccess(
+        isEditing 
+          ? `"${habitName}" updated successfully! 🎉`
+          : `"${habitName}" added successfully! 🎉`,
+        5000
+      );
+      
+      // Small delay to let user see the toast before modal closes
+      setTimeout(() => {
+        closeHabitModal();
+      }, 300);
     } else {
       console.log("[App.jsx] Upsert failed, modal will not close.");
+      showError("Failed to save habit. Please try again.", 5000);
     }
-  }, [upsertHabit, editingHabit, habitModalData, closeHabitModal]);
+  }, [upsertHabit, editingHabit, habitModalData, closeHabitModal, showSuccess, showError]);
 
   const toggleChat = useCallback(() => {
     setIsChatOpen((p) => !p);
@@ -958,6 +983,9 @@ function App() {
           onDataChange={setHabitModalData}
           onSave={handleHabitModalSave}
         />
+
+        {/* Toast Notifications */}
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
       </div>
     </Router>
   );
