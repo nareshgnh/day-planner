@@ -63,6 +63,349 @@
 }
 /* -- End react-calendar-heatmap styles -- */
 
+/* --- Habit Calendar Styles --- */
+.habit-calendar-container {
+  width: 100%;
+  max-width: 24rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.habit-calendar {
+  width: 100%;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  font-family: inherit;
+}
+
+.dark .habit-calendar {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+/* Calendar navigation */
+.habit-calendar .react-calendar__navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .habit-calendar .react-calendar__navigation {
+  border-bottom-color: #374151;
+}
+
+.habit-calendar .react-calendar__navigation button {
+  color: #374151;
+  background-color: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  transition: background-color 0.2s;
+  min-width: 32px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.dark .habit-calendar .react-calendar__navigation button {
+  color: #d1d5db;
+}
+
+.habit-calendar .react-calendar__navigation button:enabled:hover,
+.habit-calendar .react-calendar__navigation button:enabled:focus {
+  background-color: #f3f4f6;
+}
+
+.dark .habit-calendar .react-calendar__navigation button:enabled:hover,
+.dark .habit-calendar .react-calendar__navigation button:enabled:focus {
+  background-color: #374151;
+}
+
+.habit-calendar .react-calendar__navigation__label {
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+/* Month view */
+.habit-calendar .react-calendar__month-view {
+  padding: 0.5rem;
+}
+
+/* Week days header */
+.habit-calendar .react-calendar__month-view__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.habit-calendar .react-calendar__month-view__weekdays__weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  padding: 0.5rem;
+}
+
+.dark .habit-calendar .react-calendar__month-view__weekdays__weekday {
+  color: #9ca3af;
+}
+
+/* Days grid */
+.habit-calendar .react-calendar__month-view__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+/* Individual day tiles */
+.habit-calendar .react-calendar__tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  background-color: transparent;
+  cursor: pointer;
+  color: #374151;
+}
+
+.dark .habit-calendar .react-calendar__tile {
+  color: #d1d5db;
+}
+
+.habit-calendar .react-calendar__tile:enabled:hover {
+  background-color: #f3f4f6;
+  transform: scale(1.05);
+}
+
+.dark .habit-calendar .react-calendar__tile:enabled:hover {
+  background-color: #374151;
+}
+
+.habit-calendar .react-calendar__tile:enabled:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+.dark .habit-calendar .react-calendar__tile:enabled:focus {
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Neighboring month dates */
+.habit-calendar .react-calendar__month-view__days__day--neighboringMonth {
+  color: #d1d5db;
+}
+
+.dark .habit-calendar .react-calendar__month-view__days__day--neighboringMonth {
+  color: #4b5563;
+}
+
+/* Weekend styling */
+.habit-calendar .react-calendar__month-view__days__day--weekend {
+  color: #4b5563;
+}
+
+.dark .habit-calendar .react-calendar__month-view__days__day--weekend {
+  color: #9ca3af;
+}
+
+/* Today's date styling */
+.habit-calendar .react-calendar__tile--now {
+  background-color: #3b82f6 !important;
+  color: white !important;
+  font-weight: 700;
+  border: 2px solid #1d4ed8;
+}
+
+.habit-calendar .react-calendar__tile--now:enabled:hover {
+  background-color: #2563eb !important;
+}
+
+/* Selected date styling */
+.habit-calendar .react-calendar__tile--active {
+  background-color: #6366f1 !important;
+  color: white !important;
+  font-weight: 600;
+  border: 2px solid #4f46e5 !important;
+}
+
+.habit-calendar .react-calendar__tile--active:enabled:hover {
+  background-color: #4f46e5 !important;
+}
+
+/* Habit completion status colors */
+.habit-calendar .habit-day-all-complete {
+  background-color: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.dark .habit-calendar .habit-day-all-complete {
+  background-color: #14532d;
+  color: #bbf7d0;
+  border-color: #166534;
+}
+
+.habit-calendar .habit-day-all-complete:enabled:hover {
+  background-color: #bbf7d0;
+  transform: scale(1.05);
+}
+
+.dark .habit-calendar .habit-day-all-complete:enabled:hover {
+  background-color: #166534;
+}
+
+.habit-calendar .habit-day-partial-log {
+  background-color: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.dark .habit-calendar .habit-day-partial-log {
+  background-color: #78350f;
+  color: #fde68a;
+  border-color: #92400e;
+}
+
+.habit-calendar .habit-day-partial-log:enabled:hover {
+  background-color: #fde68a;
+  transform: scale(1.05);
+}
+
+.dark .habit-calendar .habit-day-partial-log:enabled:hover {
+  background-color: #92400e;
+}
+
+.habit-calendar .habit-day-all-missed {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.dark .habit-calendar .habit-day-all-missed {
+  background-color: #7f1d1d;
+  color: #fecaca;
+  border-color: #991b1b;
+}
+
+.habit-calendar .habit-day-all-missed:enabled:hover {
+  background-color: #fecaca;
+  transform: scale(1.05);
+}
+
+.dark .habit-calendar .habit-day-all-missed:enabled:hover {
+  background-color: #991b1b;
+}
+
+.habit-calendar .habit-day-pending {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border-color: #e5e7eb;
+}
+
+.dark .habit-calendar .habit-day-pending {
+  background-color: #374151;
+  color: #9ca3af;
+  border-color: #4b5563;
+}
+
+.habit-calendar .habit-day-pending:enabled:hover {
+  background-color: #e5e7eb;
+  transform: scale(1.05);
+}
+
+.dark .habit-calendar .habit-day-pending:enabled:hover {
+  background-color: #4b5563;
+}
+
+/* Override for today when it has habit status - maintain today's styling with habit colors */
+.habit-calendar .react-calendar__tile--now.habit-day-all-complete {
+  background-color: #22c55e !important;
+  color: white !important;
+  border: 2px solid #16a34a !important;
+  font-weight: 700;
+}
+
+.habit-calendar .react-calendar__tile--now.habit-day-partial-log {
+  background-color: #eab308 !important;
+  color: white !important;
+  border: 2px solid #ca8a04 !important;
+  font-weight: 700;
+}
+
+.habit-calendar .react-calendar__tile--now.habit-day-all-missed {
+  background-color: #ef4444 !important;
+  color: white !important;
+  border: 2px solid #dc2626 !important;
+  font-weight: 700;
+}
+
+.habit-calendar .react-calendar__tile--now.habit-day-pending {
+  background-color: #6b7280 !important;
+  color: white !important;
+  border: 2px solid #4b5563 !important;
+  font-weight: 700;
+}
+
+/* Override for selected date when it has habit status */
+.habit-calendar .react-calendar__tile--active.habit-day-all-complete {
+  background-color: #16a34a;
+  color: white;
+  border-color: #15803d;
+}
+
+.habit-calendar .react-calendar__tile--active.habit-day-partial-log {
+  background-color: #ca8a04;
+  color: white;
+  border-color: #a16207;
+}
+
+.habit-calendar .react-calendar__tile--active.habit-day-all-missed {
+  background-color: #dc2626;
+  color: white;
+  border-color: #b91c1c;
+}
+
+.habit-calendar .react-calendar__tile--active.habit-day-pending {
+  background-color: #4b5563;
+  color: white;
+  border-color: #374151;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .habit-calendar-container {
+    max-width: 100%;
+  }
+
+  .habit-calendar .react-calendar__tile {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+  }
+
+  .habit-calendar .react-calendar__navigation button {
+    padding: 0.25rem;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  .habit-calendar .react-calendar__navigation__label {
+    font-size: 1rem;
+  }
+}
+/* -- End Habit Calendar Styles -- */
+
 /* --- Tailwind Directives --- */
 @tailwind base;
 @tailwind components;

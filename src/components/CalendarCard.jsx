@@ -1,36 +1,49 @@
 // src/components/CalendarCard.jsx
 import React from "react";
 import Calendar from "react-calendar";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card"; // Adjust path
+import "react-calendar/dist/Calendar.css";
+import { formatDate } from "../utils/helpers";
 
-// Modified to accept onDateSelect callback
 export const CalendarCard = ({
   selectedDate,
   onDateSelect,
   getTileClassName,
 }) => {
-  // Handle date change: call the passed callback
+  // Handle date change
   const handleDateChange = (newDate) => {
     if (onDateSelect) {
       onDateSelect(newDate);
     }
   };
 
+  // Simple tile class name function
+  const tileClassNameWrapper = ({ date, view }) => {
+    if (view !== "month") return null;
+
+    const classes = [];
+
+    // Add custom classes for habit status
+    if (getTileClassName) {
+      const habitClass = getTileClassName({ date, view });
+      if (habitClass) {
+        classes.push(habitClass);
+      }
+    }
+
+    return classes.join(" ") || null;
+  };
+
   return (
-    <>
-      <div className="react-calendar-wrapper max-w-full sm:max-w-xs mx-auto">
-        <Calendar
-          onChange={handleDateChange} // Use the new handler
-          value={selectedDate}
-          tileClassName={getTileClassName}
-          maxDate={new Date()} // Prevent selecting future dates
-          minDate={new Date(new Date().getFullYear() - 5, 0, 1)} // Limit past view
-          className="text-sm" // Base styles handled by CSS in App.jsx <style>
-        />
-      </div>
-      {/* </CardContent> */}
-    </>
-    // </Card>
+    <div className="calendar-wrapper">
+      <Calendar
+        className="habit-calendar"
+        onChange={handleDateChange}
+        value={selectedDate}
+        tileClassName={tileClassNameWrapper}
+        maxDate={new Date()}
+        minDate={new Date(new Date().getFullYear() - 1, 0, 1)}
+        showNeighboringMonth={false}
+      />
+    </div>
   );
 };
