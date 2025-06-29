@@ -66,9 +66,9 @@ export const ChatPanel = ({
         aria-hidden="true"
       ></div>
       
-      {/* Chat Panel Container */}
+      {/* Chat Panel Container - positioned from bottom, 75% height */}
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-md lg:max-w-sm xl:max-w-md bg-gray-50 dark:bg-gray-900 shadow-2xl z-30 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed bottom-0 right-0 h-[75vh] w-full max-w-md lg:max-w-sm xl:max-w-md bg-gray-50 dark:bg-gray-900 shadow-2xl z-30 transform transition-transform duration-300 ease-in-out rounded-t-2xl border-t border-l border-gray-200 dark:border-gray-700 flex flex-col ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
@@ -76,7 +76,7 @@ export const ChatPanel = ({
         aria-labelledby="chat-title"
       >
         {/* Chat Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600">
               <Sparkles size={18} className="text-white" />
@@ -223,7 +223,7 @@ export const ChatPanel = ({
         </div>
 
         {/* Chat Input Footer */}
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="flex-1 relative">
               <Input
