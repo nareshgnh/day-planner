@@ -37,7 +37,6 @@ import { Header } from "./components/Header";
 import { HabitModal } from "./components/HabitModal";
 import { ChatPanel } from "./components/ChatPanel";
 import { BottomNavigation } from "./components/BottomNavigation";
-import { ToastContainer, useToast } from "./components/Toast";
 import { Button } from "./ui/Button";
 
 // Pages
@@ -102,9 +101,6 @@ function App() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [notificationPermission, setNotificationPermission] =
     useState("default");
-
-  // Toast notifications
-  const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
 
   useEffect(() => {
     setIsLoadingData(true);
@@ -200,21 +196,22 @@ function App() {
           : deleteField(),
     };
 
+    // Form validation without alerts
     if (!newHabitData.title) {
-      alert("Habit title required.");
+      console.log("Validation error: Habit title required.");
       return false;
     }
     const startD = parseDate(newHabitData.startDate);
     const endD = newHabitData.endDate ? parseDate(newHabitData.endDate) : null;
     if (!startD || (newHabitData.endDate && !endD) || (endD && startD > endD)) {
-      alert("Invalid date range.");
+      console.log("Validation error: Invalid date range.");
       return false;
     }
     if (
       scheduleType === "specific_days" &&
       (!newHabitData.scheduleDays || newHabitData.scheduleDays.length === 0)
     ) {
-      alert("Select days for 'Specific Days'.");
+      console.log("Validation error: Select days for 'Specific Days'.");
       return false;
     }
     if (
@@ -222,12 +219,12 @@ function App() {
       (newHabitData.scheduleFrequency === null ||
         newHabitData.scheduleFrequency <= 0)
     ) {
-      alert("Enter valid frequency.");
+      console.log("Validation error: Enter valid frequency.");
       return false;
     }
     if (isMeasurable && newHabitData.unit === undefined) {
       if (!habitDataToSave.unit || !habitDataToSave.unit.trim()) {
-        alert("Unit required for measurable habits.");
+        console.log("Validation error: Unit required for measurable habits.");
         return false;
       }
       newHabitData.unit = habitDataToSave.unit.trim();
@@ -243,7 +240,9 @@ function App() {
         habitDataToSave.goal === undefined ||
         habitDataToSave.goal <= 0
       ) {
-        alert("Valid goal (> 0) required for measurable habits.");
+        console.log(
+          "Validation error: Valid goal (> 0) required for measurable habits."
+        );
         return false;
       }
       newHabitData.goal = habitDataToSave.goal;
@@ -262,27 +261,29 @@ function App() {
       return true;
     } catch (error) {
       console.error("Error saving habit:", error);
-      alert("Failed to save habit.");
+      // Remove alert to avoid blocking the UI flow
       return false;
     }
   }, []);
 
-  const handleDeleteHabitCallback = useCallback(async (id) => {
-    if (!id) return;
-    
-    // Find the habit name for the notification
-    const habit = habits.find(h => h.id === id);
-    const habitName = habit?.title || "Habit";
-    
-    const dR = doc(db, "habits", id);
-    try {
-      await deleteDoc(dR);
-      showSuccess(`"${habitName}" deleted successfully! 🗑️`, 4000);
-    } catch (e) {
-      console.error(e);
-      showError("Failed to delete habit. Please try again.", 5000);
-    }
-  }, [habits, showSuccess, showError]);
+  const handleDeleteHabitCallback = useCallback(
+    async (id) => {
+      if (!id) return;
+
+      // Find the habit name for the notification
+      const habit = habits.find((h) => h.id === id);
+      const habitName = habit?.title || "Habit";
+
+      const dR = doc(db, "habits", id);
+      try {
+        await deleteDoc(dR);
+        console.log(`"${habitName}" deleted successfully!`);
+      } catch (e) {
+        console.error("Failed to delete habit:", e);
+      }
+    },
+    [habits]
+  );
 
   const updateHabitLog = useCallback(async (habitId, date, value) => {
     const dateStr = formatDate(date);
@@ -352,37 +353,34 @@ function App() {
   }, []);
 
   const handleHabitModalSave = useCallback(async () => {
-    console.log("[App.jsx] Attempting to save habit:", habitModalData);
-    const success = await upsertHabit({
-      id: editingHabit?.id,
-      ...habitModalData,
-    });
-    console.log(
-      "[App.jsx] Upsert success:",
-      success,
-      "- Calling closeHabitModal."
-    );
-    if (success) {
+    try {
+      // Close modal first to improve perceived performance
+      const habitToSave = {
+        id: editingHabit?.id,
+        ...habitModalData,
+      };
+
       const habitName = habitModalData.title || "Habit";
       const isEditing = !!editingHabit;
-      
-      // Show success notification
-      showSuccess(
-        isEditing 
-          ? `"${habitName}" updated successfully! 🎉`
-          : `"${habitName}" added successfully! 🎉`,
-        5000
-      );
-      
-      // Small delay to let user see the toast before modal closes
-      setTimeout(() => {
-        closeHabitModal();
-      }, 300);
-    } else {
-      console.log("[App.jsx] Upsert failed, modal will not close.");
-      showError("Failed to save habit. Please try again.", 5000);
+      const successMessage = isEditing
+        ? `"${habitName}" updated successfully! 🎉`
+        : `"${habitName}" added successfully! 🎉`;
+
+      // Close modal immediately
+      closeHabitModal();
+
+      // Then save the habit
+      const success = await upsertHabit(habitToSave);
+
+      if (success) {
+        console.log("Habit saved successfully:", successMessage);
+      } else {
+        console.log("Failed to save habit");
+      }
+    } catch (error) {
+      console.error("Error in handleHabitModalSave:", error);
     }
-  }, [upsertHabit, editingHabit, habitModalData, closeHabitModal, showSuccess, showError]);
+  }, [upsertHabit, editingHabit, habitModalData, closeHabitModal]);
 
   const toggleChat = useCallback(() => {
     setIsChatOpen((p) => !p);
@@ -983,9 +981,6 @@ function App() {
           onDataChange={setHabitModalData}
           onSave={handleHabitModalSave}
         />
-
-        {/* Toast Notifications */}
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
       </div>
     </Router>
   );
