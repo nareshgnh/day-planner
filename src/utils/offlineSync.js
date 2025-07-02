@@ -1,6 +1,6 @@
 // src/utils/offlineSync.js
 import { db } from "../firebaseConfig";
-import { doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, updateDoc, deleteField } from "firebase/firestore";
 
 class OfflineSync {
   constructor() {
