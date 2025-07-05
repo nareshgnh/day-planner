@@ -20,7 +20,7 @@ export const ToastProvider = ({ children }) => {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className="bg-gray-900 text-white px-4 py-2 rounded shadow-lg animate-fade-in-out"
+            className="toast-message animate-fade-in-out"
           >
             {toast.message}
           </div>

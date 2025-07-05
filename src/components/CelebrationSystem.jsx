@@ -1,5 +1,5 @@
 // src/components/CelebrationSystem.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Sparkles, Star, Zap, Heart } from "lucide-react";
 import { useToast } from "./ToastProvider.jsx";
 
@@ -12,11 +12,13 @@ export const CelebrationSystem = ({
 }) => {
   const [particles, setParticles] = useState([]);
   const { addToast } = useToast();
+  const hasShownToast = useRef(false);
 
   useEffect(() => {
-    if (isVisible) {
+    if (isVisible && !hasShownToast.current) {
       generateParticles();
       addToast(getCelebrationMessage());
+      hasShownToast.current = true;
 
       if (typeof window !== "undefined" && window.navigator.vibrate) {
         window.navigator.vibrate([100, 50, 100]);
@@ -27,6 +29,10 @@ export const CelebrationSystem = ({
       }, 2000);
 
       return () => clearTimeout(timer);
+    }
+
+    if (!isVisible) {
+      hasShownToast.current = false;
     }
   }, [isVisible, onComplete, addToast]);
 
