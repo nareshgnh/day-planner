@@ -1,6 +1,7 @@
 // src/components/CelebrationSystem.jsx
 import React, { useEffect, useState } from "react";
-import { Sparkles, Trophy, Star, Zap, Heart } from "lucide-react";
+import { Sparkles, Star, Zap, Heart } from "lucide-react";
+import { useToast } from "./ToastProvider.jsx";
 
 export const CelebrationSystem = ({
   isVisible,
@@ -10,28 +11,24 @@ export const CelebrationSystem = ({
   milestoneText = "",
 }) => {
   const [particles, setParticles] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const { addToast } = useToast();
 
   useEffect(() => {
     if (isVisible) {
-      setShowModal(true);
       generateParticles();
+      addToast(getCelebrationMessage());
 
-      // Play celebration sound (if enabled)
       if (typeof window !== "undefined" && window.navigator.vibrate) {
         window.navigator.vibrate([100, 50, 100]);
       }
 
       const timer = setTimeout(() => {
-        setShowModal(false);
-        setTimeout(() => {
-          onComplete?.();
-        }, 300);
+        onComplete?.();
       }, 2000);
 
       return () => clearTimeout(timer);
     }
-  }, [isVisible, onComplete]);
+  }, [isVisible, onComplete, addToast]);
 
   const generateParticles = () => {
     const newParticles = Array.from({ length: 20 }, (_, i) => ({
@@ -100,9 +97,8 @@ export const CelebrationSystem = ({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-      {/* Particles */}
-      <div className="absolute inset-0 overflow-hidden">
+    <div className="fixed inset-0 z-50 pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
         {particles.map((particle) => {
           const Icon = particle.icon;
           return (
@@ -123,39 +119,6 @@ export const CelebrationSystem = ({
             </div>
           );
         })}
-      </div>
-
-      {/* Celebration Modal */}
-      <div
-        className={`
-          bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 mx-4 max-w-sm w-full
-          transform transition-all duration-300 pointer-events-auto
-          ${showModal ? "scale-100 opacity-100" : "scale-95 opacity-0"}
-          border-4 border-gradient-to-r from-yellow-400 via-pink-500 to-purple-500
-        `}
-      >
-        <div className="text-center">
-          <div className="mb-4">
-            <Trophy
-              size={48}
-              className="mx-auto text-yellow-500 animate-bounce"
-            />
-          </div>
-
-          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-            {getCelebrationMessage()}
-          </h3>
-
-          <div className="flex justify-center space-x-2 mb-4">
-            <Sparkles className="text-yellow-400 animate-pulse" size={20} />
-            <Star className="text-yellow-400 animate-pulse" size={20} />
-            <Sparkles className="text-yellow-400 animate-pulse" size={20} />
-          </div>
-
-          <p className="text-gray-600 dark:text-gray-300 text-sm">
-            Keep up the amazing work! 💪
-          </p>
-        </div>
       </div>
     </div>
   );

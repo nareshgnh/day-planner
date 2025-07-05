@@ -1,11 +1,14 @@
 // src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.jsx"; // Make sure this points to your App component file
-import "./index.css"; // Ensure this line exists
+import App from "./App.jsx";
+import { ToastProvider } from "./components/ToastProvider.jsx";
+import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <ToastProvider>
+      <App />
+    </ToastProvider>
   </React.StrictMode>
 );
