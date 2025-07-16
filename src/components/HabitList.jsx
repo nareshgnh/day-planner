@@ -189,6 +189,7 @@ export const HabitList = ({
                 onEdit={openModalForEditHabit}
                 onDelete={handleDeleteHabitCallback}
                 onSelect={onSelectHabitForStats}
+                habitLog={habitLog} // Pass habitLog for streak calculation
               />
             ))}
           </ul>

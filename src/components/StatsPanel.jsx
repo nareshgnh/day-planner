@@ -2,8 +2,16 @@
 import React, { useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card"; // Adjust path
 import { Button } from "../ui/Button"; // Adjust path
-import { TrendingUp, TrendingDown, CalendarClock, X } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  CalendarClock,
+  X,
+  Flame,
+  Trophy,
+} from "lucide-react";
 import { formatDate, parseDate } from "../utils/helpers"; // Adjust path
+import { calculateStreakInfo, getStreakLevel } from "../utils/streakUtils"; // Import streak utilities
 import {
   calculateStats,
   prepareHeatmapData,
@@ -44,6 +52,17 @@ export const StatsPanel = ({ habit, habitLog, onClose }) => {
     () => calculateStats(habit, habitLog),
     [habit, habitLog]
   );
+
+  // Calculate streak information
+  const streakInfo = useMemo(() => {
+    if (!habit || !habitLog) return { currentStreak: 0, bestStreak: 0 };
+    return calculateStreakInfo(habit, habitLog);
+  }, [habit, habitLog]);
+
+  // Get streak level styling
+  const streakLevel = useMemo(() => {
+    return getStreakLevel(streakInfo.currentStreak);
+  }, [streakInfo.currentStreak]);
 
   // *** Prepare data for Heatmap ***
   const heatmapData = useMemo(() => {
@@ -160,16 +179,42 @@ export const StatsPanel = ({ habit, habitLog, onClose }) => {
         </Button>
       </CardHeader>
       <CardContent className="space-y-5 pt-4">
-        {/* Basic Stats Row */}
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-            <div className="text-xs text-blue-700 dark:text-blue-300 font-medium">
-              Streak
+        {/* Enhanced Streak Section */}
+        <div
+          className={`p-4 rounded-lg bg-gradient-to-r ${streakLevel.color} text-white`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <Flame className="h-5 w-5 mr-2" />
+              <h3 className="font-bold">Streak Status</h3>
             </div>
-            <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
-              {stats.currentStreak}d
+            <div className="text-xs font-medium px-2 py-1 bg-white/20 rounded-full">
+              {streakLevel.title}
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-3">
+            <div className="text-center">
+              <div className="text-3xl font-bold">
+                {streakInfo.currentStreak}
+              </div>
+              <div className="text-xs text-white/80">Current Streak</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold">{streakInfo.bestStreak}</div>
+              <div className="text-xs text-white/80">Best Streak</div>
+            </div>
+          </div>
+
+          {streakInfo.lastCompletedDate && (
+            <div className="mt-3 text-xs text-white/80 text-center">
+              Last completed: {streakInfo.lastCompletedDate}
+            </div>
+          )}
+        </div>
+
+        {/* Basic Stats Row */}
+        <div className="grid grid-cols-2 gap-3 text-center">
           <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg">
             <div className="text-xs text-green-700 dark:text-green-300 font-medium">
               {completedLabel}

@@ -44,6 +44,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ManageHabitsPage from "./pages/ManageHabitsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
+import StreaksPage from "./pages/StreaksPage";
 
 // Utils & Constants
 import {
@@ -61,6 +62,7 @@ import {
   ListChecks,
   LineChart,
   Settings as SettingsIcon,
+  Flame,
 } from "lucide-react";
 
 const habitsCollectionRef = collection(db, "habits");
@@ -882,6 +884,9 @@ function App() {
             <NavItem to="/analytics" icon={LineChart}>
               Analytics
             </NavItem>
+            <NavItem to="/streaks" icon={Flame}>
+              Streaks
+            </NavItem>
             <NavItem to="/settings" icon={SettingsIcon}>
               Settings
             </NavItem>
@@ -935,6 +940,10 @@ function App() {
                     importData={importData}
                   />
                 }
+              />
+              <Route
+                path="/streaks"
+                element={<StreaksPage habits={habits} habitLog={habitLog} />}
               />
             </Routes>
           </main>

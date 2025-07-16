@@ -1,8 +1,14 @@
 // src/components/HabitListItem.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "../ui/Button"; // Adjust path
 import { Input } from "../ui/Input"; // Adjust path
 import { CelebrationSystem, useCelebration } from "./CelebrationSystem";
+import StreakBadge from "./StreakBadge";
+import StreakMilestoneModal from "./StreakMilestoneModal";
+import {
+  calculateStreakInfo,
+  checkMilestoneReached,
+} from "../utils/streakUtils";
 import {
   CheckCircle,
   XCircle,
@@ -27,7 +33,18 @@ export const HabitListItem = ({
   onEdit,
   onDelete,
   onSelect,
+  habitLog, // Add habitLog for streak calculation
 }) => {
+  // State for streak milestone modal
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [reachedMilestone, setReachedMilestone] = useState(null);
+  const [previousStreak, setPreviousStreak] = useState(0);
+
+  // Calculate current streak info
+  const streakInfo = useMemo(() => {
+    if (!habit || !habitLog) return { currentStreak: 0, bestStreak: 0 };
+    return calculateStreakInfo(habit, habitLog);
+  }, [habit, habitLog]);
   const isGoodHabit = habit.type !== "bad";
   const isMeasurable = habit.isMeasurable || false;
   const goal = isMeasurable ? habit.goal : null;
@@ -47,6 +64,11 @@ export const HabitListItem = ({
   // --- Handlers for Non-Measurable ---
   const handleLogBoolean = (e, status) => {
     e.stopPropagation();
+
+    // Store previous streak before updating
+    const prevStreak = streakInfo.currentStreak;
+
+    // Update habit log
     updateHabitLog(habit.id, selectedDate, status);
 
     // Celebrate if completing a good habit or avoiding a bad habit
@@ -58,6 +80,24 @@ export const HabitListItem = ({
         ? `Great job completing "${habit.title}"!`
         : `Awesome! You avoided "${habit.title}" today!`;
       celebrate("habit", celebrationMessage);
+
+      // Check for streak milestone after a short delay to allow the database to update
+      setTimeout(() => {
+        // Recalculate streak after update
+        const updatedStreakInfo = calculateStreakInfo(habit, habitLog);
+        const newStreak = updatedStreakInfo.currentStreak;
+
+        // Check if a milestone was reached
+        const milestone = checkMilestoneReached(prevStreak, newStreak);
+        if (milestone) {
+          setPreviousStreak(prevStreak);
+          setReachedMilestone(milestone);
+          setShowMilestoneModal(true);
+
+          // Also trigger the celebration animation
+          celebrate("streak", habit.title, `${milestone}-day streak reached!`);
+        }
+      }, 500);
     }
   };
 
@@ -79,6 +119,9 @@ export const HabitListItem = ({
       }
       const numericValue = parseFloat(valueStr);
       if (!isNaN(numericValue) && numericValue >= 0) {
+        // Store previous streak before updating
+        const prevStreak = streakInfo.currentStreak;
+
         updateHabitLog(habit.id, selectedDate, numericValue);
 
         // Celebrate if reaching the goal
@@ -88,6 +131,21 @@ export const HabitListItem = ({
             habit.title,
             `Goal reached: ${numericValue}${unit}`
           );
+
+          // Check for streak milestone after a short delay to allow the database to update
+          setTimeout(() => {
+            // Recalculate streak after update
+            const updatedStreakInfo = calculateStreakInfo(habit, habitLog);
+            const newStreak = updatedStreakInfo.currentStreak;
+
+            // Check if a milestone was reached
+            const milestone = checkMilestoneReached(prevStreak, newStreak);
+            if (milestone) {
+              setPreviousStreak(prevStreak);
+              setReachedMilestone(milestone);
+              setShowMilestoneModal(true);
+            }
+          }, 500);
         }
       } else {
         alert(
@@ -103,6 +161,8 @@ export const HabitListItem = ({
       unit,
       goal,
       celebrate,
+      streakInfo.currentStreak,
+      habitLog,
     ]
   );
 
@@ -183,12 +243,33 @@ export const HabitListItem = ({
           <ThumbsUp size={16} className="text-green-500 flex-shrink-0" />
         )}
         <div className="flex flex-col">
-          <span
-            className="font-medium text-sm md:text-base truncate"
-            title={habit.title}
-          >
-            {habit.title}
-          </span>
+          <div className="flex items-center space-x-2">
+            <span
+              className="font-medium text-sm md:text-base truncate"
+              title={habit.title}
+            >
+              {habit.title}
+            </span>
+            {/* Streak Badge */}
+            {habitLog && (
+              <div
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = "/streaks";
+                }}
+                title="View all streaks"
+              >
+                <StreakBadge
+                  currentStreak={streakInfo.currentStreak}
+                  bestStreak={streakInfo.bestStreak}
+                  habitTitle={habit.title}
+                  size="small"
+                  showMilestone={false}
+                />
+              </div>
+            )}
+          </div>
           {/* Status display logic remains same */}
           <span
             className={`text-xs ${
@@ -342,6 +423,15 @@ export const HabitListItem = ({
         celebrationType={celebration.type}
         habitTitle={celebration.habitTitle}
         milestoneText={celebration.milestoneText}
+      />
+
+      {/* Streak Milestone Modal */}
+      <StreakMilestoneModal
+        isOpen={showMilestoneModal}
+        onClose={() => setShowMilestoneModal(false)}
+        milestone={reachedMilestone}
+        habitTitle={habit.title}
+        currentStreak={streakInfo.currentStreak}
       />
     </li>
   );

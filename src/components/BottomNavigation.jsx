@@ -1,7 +1,13 @@
 // src/components/BottomNavigation.jsx
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, ListChecks, LineChart, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  ListChecks,
+  LineChart,
+  Settings,
+  Flame,
+} from "lucide-react";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -24,6 +30,12 @@ const BottomNavigation = () => {
       icon: LineChart,
       label: "Analytics",
       isActive: location.pathname === "/analytics",
+    },
+    {
+      to: "/streaks",
+      icon: Flame,
+      label: "Streaks",
+      isActive: location.pathname === "/streaks",
     },
     {
       to: "/settings",

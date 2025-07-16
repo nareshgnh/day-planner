@@ -20,7 +20,17 @@ import {
 } from "../utils/helpers";
 import { calculateGlobalStats } from "../utils/stats";
 import { fetchDailyMotivation } from "../utils/api";
-import { Plus, Target, Calendar, BarChart3, Zap } from "lucide-react";
+import { calculateStreakInfo } from "../utils/streakUtils";
+import { Link } from "react-router-dom";
+import {
+  Plus,
+  Target,
+  Calendar,
+  BarChart3,
+  Zap,
+  Flame,
+  Trophy,
+} from "lucide-react";
 
 const DashboardPage = ({
   habits,
@@ -260,6 +270,81 @@ const DashboardPage = ({
             <div className="xl:col-span-3 space-y-6">
               {/* Progress Overview - Compact Stats */}
               <GlobalStatsDashboard globalStats={globalStats} />
+
+              {/* Streak Summary Card */}
+              <Card className="overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Flame className="h-6 w-6 text-white" />
+                      <h3 className="text-lg font-bold text-white">
+                        Streak Central
+                      </h3>
+                    </div>
+                    <Link to="/streaks">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="bg-white/20 hover:bg-white/30 text-white border-0"
+                      >
+                        View All Streaks
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+
+                <CardContent className="p-4">
+                  {habits.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {habits
+                        .map((habit) => ({
+                          habit,
+                          streakInfo: calculateStreakInfo(habit, habitLog),
+                        }))
+                        .sort(
+                          (a, b) =>
+                            b.streakInfo.currentStreak -
+                            a.streakInfo.currentStreak
+                        )
+                        .slice(0, 3)
+                        .map(({ habit, streakInfo }) => (
+                          <div
+                            key={habit.id}
+                            className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+                          >
+                            <div className="mr-3">
+                              {streakInfo.currentStreak >= 30 ? (
+                                <Trophy className="h-8 w-8 text-yellow-500" />
+                              ) : streakInfo.currentStreak >= 7 ? (
+                                <Flame className="h-8 w-8 text-orange-500" />
+                              ) : (
+                                <Zap className="h-8 w-8 text-blue-500" />
+                              )}
+                            </div>
+                            <div>
+                              <div
+                                className="font-medium text-sm truncate"
+                                title={habit.title}
+                              >
+                                {habit.title}
+                              </div>
+                              <div className="text-2xl font-bold">
+                                {streakInfo.currentStreak}{" "}
+                                <span className="text-sm font-normal text-gray-500">
+                                  days
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500 py-4">
+                      Start building habits to track your streaks!
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Calendar and Habits List */}
               <div
