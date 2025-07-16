@@ -1,7 +1,7 @@
 // src/firebaseConfig.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-// import { getAuth } from "firebase/auth"; // We'll add this later for authentication
+import { getAuth } from "firebase/auth"; // Added for authentication
 
 // Your web app's Firebase configuration using environment variables
 // Make sure your environment variables are set up correctly (e.g., in a .env file)
@@ -22,11 +22,11 @@ const app = initializeApp(firebaseConfig);
 // Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
 
-// Initialize Firebase Authentication and get a reference to the service (add later)
-// const auth = getAuth(app);
+// Initialize Firebase Authentication and get a reference to the service
+const auth = getAuth(app);
 
 // Export the necessary Firebase services
-export { db }; // Add 'auth' here later: export { db, auth };
+export { db, auth, app };
 
 // Optional: Log successful initialization (remove in production)
 console.log("Firebase Initialized. Project ID:", firebaseConfig.projectId);

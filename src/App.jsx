@@ -45,6 +45,7 @@ import ManageHabitsPage from "./pages/ManageHabitsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
 import StreaksPage from "./pages/StreaksPage";
+import LoginPage from "./pages/LoginPage";
 
 // Utils & Constants
 import {
@@ -902,6 +903,7 @@ function App() {
               </div>
             )}
             <Routes>
+              <Route path="/login" element={<LoginPage />} />
               <Route
                 path="/"
                 element={
