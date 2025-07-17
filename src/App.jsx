@@ -926,7 +926,8 @@ function App() {
 
           {/* Main Content Area */}
           <main className="flex-grow flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent p-3 sm:p-4 md:p-6 pb-20 lg:pb-6">
-            {isLoadingData && (
+            {/* Only show loading data when user is authenticated and data is loading */}
+            {user && isLoadingData && (
               <div className="fixed inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-50">
                 <p className="text-lg font-semibold animate-pulse dark:text-white">
                   Loading Data...
