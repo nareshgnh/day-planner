@@ -1,0 +1,61 @@
+// Add this useEffect for authentication state management right after your other useEffects
+useEffect(() => {
+  // Listen for authentication state changes
+  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    setUser(currentUser);
+    setIsAuthLoading(false);
+    
+    if (currentUser) {
+      console.log("User authenticated:", currentUser.uid);
+      // If user is authenticated, set their name
+      if (currentUser.displayName) {
+        setUserName(currentUser.displayName);
+      }
+    } else {
+      console.log("User not authenticated");
+      // Redirect to login page if not authenticated
+      window.location.href = "/login";
+    }
+  });
+  
+  // Cleanup subscription
+  return () => unsubscribe();
+}, []);
+
+// Modify your data loading useEffect to only run when user is authenticated
+useEffect(() => {
+  if (!user) return; // Don't load data if user is not authenticated
+  
+  setIsLoadingData(true);
+  let isInitial = true;
+  const qH = query(habitsCollectionRef, orderBy("title"));
+  const unH = onSnapshot(
+    qH,
+    (qs) => {
+      const d = qs.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setHabits(d);
+      if (isInitial) {
+        setIsLoadingData(false);
+        isInitial = false;
+      }
+    },
+    (e) => {
+      console.error("Habits listener err:", e);
+      setIsLoadingData(false);
+    }
+  );
+  const qL = query(habitLogCollectionRef);
+  const unL = onSnapshot(
+    qL,
+    (qs) => {
+      const d = {};
+      qs.forEach((doc) => (d[doc.id] = doc.data()));
+      setHabitLog(d);
+    },
+    (e) => console.error("Logs listener err:", e)
+  );
+  return () => {
+    unH();
+    unL();
+  };
+}, [user]); // Add user as a dependency

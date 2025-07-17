@@ -14,7 +14,7 @@ import {
 } from "react-router-dom";
 
 // Firebase Imports
-import { db } from "./firebaseConfig";
+import { db, auth } from "./firebaseConfig";
 import {
   collection,
   query,
@@ -28,6 +28,7 @@ import {
   getDocs,
   writeBatch,
 } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 // Hooks
 import { useDarkMode } from "./hooks/useDarkMode";
@@ -105,7 +106,38 @@ function App() {
   const [notificationPermission, setNotificationPermission] =
     useState("default");
 
+  // Authentication state
+  const [user, setUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  // Authentication state listener
   useEffect(() => {
+    // Listen for authentication state changes
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthLoading(false);
+
+      if (currentUser) {
+        console.log("User authenticated:", currentUser.uid);
+        // If user is authenticated, set their name
+        if (currentUser.displayName) {
+          setUserName(currentUser.displayName);
+        }
+      } else {
+        console.log("User not authenticated");
+        // Redirect to login page if not authenticated
+        window.location.href = "/login";
+      }
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
+
+  // Data loading effect - only runs when user is authenticated
+  useEffect(() => {
+    if (!user) return; // Don't load data if user is not authenticated
+
     setIsLoadingData(true);
     let isInitial = true;
     const qH = query(habitsCollectionRef, orderBy("title"));
@@ -138,7 +170,7 @@ function App() {
       unH();
       unL();
     };
-  }, []);
+  }, [user]); // Add user as a dependency
 
   useEffect(() => {
     if ("Notification" in window)
@@ -903,50 +935,64 @@ function App() {
               </div>
             )}
             <Routes>
+              {/* Login route - accessible without authentication */}
               <Route path="/login" element={<LoginPage />} />
-              <Route
-                path="/"
-                element={
-                  <DashboardPage
-                    habits={habits}
-                    habitLog={habitLog}
-                    openModalForNewHabit={openModalForNewHabit}
-                    openModalForEditHabit={openModalForEditHabit}
-                    handleDeleteHabitCallback={handleDeleteHabitCallback}
-                    updateHabitLog={updateHabitLog}
-                    isLoadingData={isLoadingData}
+
+              {/* Protected routes - only accessible when authenticated */}
+              {user ? (
+                <>
+                  <Route
+                    path="/"
+                    element={
+                      <DashboardPage
+                        habits={habits}
+                        habitLog={habitLog}
+                        openModalForNewHabit={openModalForNewHabit}
+                        openModalForEditHabit={openModalForEditHabit}
+                        handleDeleteHabitCallback={handleDeleteHabitCallback}
+                        updateHabitLog={updateHabitLog}
+                        isLoadingData={isLoadingData}
+                      />
+                    }
                   />
-                }
-              />
-              <Route
-                path="/manage"
-                element={
-                  <ManageHabitsPage
-                    habits={habits}
-                    habitLog={habitLog}
-                    openModalForEditHabit={openModalForEditHabit}
-                    handleDeleteHabitCallback={handleDeleteHabitCallback}
-                    openModalForNewHabit={openModalForNewHabit}
+                  <Route
+                    path="/manage"
+                    element={
+                      <ManageHabitsPage
+                        habits={habits}
+                        habitLog={habitLog}
+                        openModalForEditHabit={openModalForEditHabit}
+                        handleDeleteHabitCallback={handleDeleteHabitCallback}
+                        openModalForNewHabit={openModalForNewHabit}
+                      />
+                    }
                   />
-                }
-              />
-              <Route
-                path="/analytics"
-                element={<AnalyticsPage habits={habits} habitLog={habitLog} />}
-              />
-              <Route
-                path="/settings"
-                element={
-                  <SettingsPage
-                    exportData={exportData}
-                    importData={importData}
+                  <Route
+                    path="/analytics"
+                    element={
+                      <AnalyticsPage habits={habits} habitLog={habitLog} />
+                    }
                   />
-                }
-              />
-              <Route
-                path="/streaks"
-                element={<StreaksPage habits={habits} habitLog={habitLog} />}
-              />
+                  <Route
+                    path="/settings"
+                    element={
+                      <SettingsPage
+                        exportData={exportData}
+                        importData={importData}
+                      />
+                    }
+                  />
+                  <Route
+                    path="/streaks"
+                    element={
+                      <StreaksPage habits={habits} habitLog={habitLog} />
+                    }
+                  />
+                </>
+              ) : (
+                // Redirect to login if not authenticated
+                <Route path="*" element={<LoginPage />} />
+              )}
             </Routes>
           </main>
         </div>

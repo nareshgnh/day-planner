@@ -3,7 +3,15 @@ import React, { useRef, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { NotificationSettings } from "../components/NotificationSettings";
-import { Settings, Upload, Download, Bell, Database } from "lucide-react";
+import {
+  Settings,
+  Upload,
+  Download,
+  Bell,
+  Database,
+  LogOut,
+} from "lucide-react";
+import { logOut } from "../utils/auth";
 
 const SettingsPage = ({ exportData, importData, habits = [] }) => {
   const fileInputRef = useRef(null);
@@ -88,6 +96,38 @@ const SettingsPage = ({ exportData, importData, habits = [] }) => {
               className="w-full sm:w-auto"
             >
               <Upload size={16} className="mr-2" /> Import Data
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-md font-medium mb-1 text-gray-700 dark:text-gray-200">
+              Authentication
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Sign out of your account. You'll need to log back in to access
+              your data.
+            </p>
+            <Button
+              onClick={async () => {
+                try {
+                  await logOut();
+                  window.location.href = "/login";
+                } catch (error) {
+                  console.error("Error logging out:", error);
+                  alert("Failed to log out. Please try again.");
+                }
+              }}
+              variant="destructive"
+              className="w-full sm:w-auto"
+            >
+              <LogOut size={16} className="mr-2" /> Sign Out
             </Button>
           </div>
         </CardContent>
