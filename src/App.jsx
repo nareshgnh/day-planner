@@ -125,8 +125,7 @@ function App() {
         }
       } else {
         console.log("User not authenticated");
-        // Redirect to login page if not authenticated
-        window.location.href = "/login";
+        // Don't redirect here - let the routing handle it
       }
     });
 
@@ -934,66 +933,78 @@ function App() {
                 </p>
               </div>
             )}
-            <Routes>
-              {/* Login route - accessible without authentication */}
-              <Route path="/login" element={<LoginPage />} />
+            {/* Show loading screen while authentication is being checked */}
+            {isAuthLoading ? (
+              <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                    Checking authentication...
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <Routes>
+                {/* Login route - accessible without authentication */}
+                <Route path="/login" element={<LoginPage />} />
 
-              {/* Protected routes - only accessible when authenticated */}
-              {user ? (
-                <>
-                  <Route
-                    path="/"
-                    element={
-                      <DashboardPage
-                        habits={habits}
-                        habitLog={habitLog}
-                        openModalForNewHabit={openModalForNewHabit}
-                        openModalForEditHabit={openModalForEditHabit}
-                        handleDeleteHabitCallback={handleDeleteHabitCallback}
-                        updateHabitLog={updateHabitLog}
-                        isLoadingData={isLoadingData}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/manage"
-                    element={
-                      <ManageHabitsPage
-                        habits={habits}
-                        habitLog={habitLog}
-                        openModalForEditHabit={openModalForEditHabit}
-                        handleDeleteHabitCallback={handleDeleteHabitCallback}
-                        openModalForNewHabit={openModalForNewHabit}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/analytics"
-                    element={
-                      <AnalyticsPage habits={habits} habitLog={habitLog} />
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <SettingsPage
-                        exportData={exportData}
-                        importData={importData}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/streaks"
-                    element={
-                      <StreaksPage habits={habits} habitLog={habitLog} />
-                    }
-                  />
-                </>
-              ) : (
-                // Redirect to login if not authenticated
-                <Route path="*" element={<LoginPage />} />
-              )}
-            </Routes>
+                {/* Protected routes - only accessible when authenticated */}
+                {user ? (
+                  <>
+                    <Route
+                      path="/"
+                      element={
+                        <DashboardPage
+                          habits={habits}
+                          habitLog={habitLog}
+                          openModalForNewHabit={openModalForNewHabit}
+                          openModalForEditHabit={openModalForEditHabit}
+                          handleDeleteHabitCallback={handleDeleteHabitCallback}
+                          updateHabitLog={updateHabitLog}
+                          isLoadingData={isLoadingData}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/manage"
+                      element={
+                        <ManageHabitsPage
+                          habits={habits}
+                          habitLog={habitLog}
+                          openModalForEditHabit={openModalForEditHabit}
+                          handleDeleteHabitCallback={handleDeleteHabitCallback}
+                          openModalForNewHabit={openModalForNewHabit}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/analytics"
+                      element={
+                        <AnalyticsPage habits={habits} habitLog={habitLog} />
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <SettingsPage
+                          exportData={exportData}
+                          importData={importData}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/streaks"
+                      element={
+                        <StreaksPage habits={habits} habitLog={habitLog} />
+                      }
+                    />
+                  </>
+                ) : (
+                  // Redirect to login if not authenticated
+                  <Route path="*" element={<LoginPage />} />
+                )}
+              </Routes>
+            )}
           </main>
         </div>
 
