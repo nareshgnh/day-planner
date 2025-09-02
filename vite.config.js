@@ -12,7 +12,7 @@ export default defineConfig({
       registerType: "autoUpdate", // Automatically update service worker when new content is available
       injectRegister: "auto", // Let the plugin handle service worker registration script injection
       devOptions: {
-        enabled: true, // Enable PWA features in development for testing (optional)
+        enabled: false, // Avoid SW cache during development to prevent stale bundles
       },
       workbox: {
         // Define assets to be cached by the service worker
@@ -39,7 +39,7 @@ export default defineConfig({
           // Add other runtime caching rules if needed
         ],
       },
-      includeAssets: ["favicon.ico", "apple-touch-icon.png"], // Ensure specific assets are precached
+      includeAssets: ["favicon.ico"], // avoid missing apple-touch-icon in dev
       manifest: {
         // === Essential Manifest Properties ===
         name: "Habit Tracker Pro", // Full name of the app
@@ -53,31 +53,8 @@ export default defineConfig({
         background_color: "#ffffff", // Splash screen background color (light mode)
         theme_color: "#6366F1", // Theme color for the browser UI (often matches header) - Adjust if needed
 
-        // --- Icons (Update paths/names to match your files in public/icons/) ---
-        icons: [
-          {
-            src: "/icons/icon-192x192.png", // Path relative to public folder
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "/icons/icon-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "/icons/apple-touch-icon.png", // Specifically for iOS
-            sizes: "180x180",
-            type: "image/png",
-          },
-          {
-            src: "/icons/icon-512x512.png", // Example maskable icon (optional)
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-          // Add more sizes if desired
-        ],
+        // --- Icons ---
+        // Add PNG icons in public/icons for production builds to avoid 404s.
         // === Optional Manifest Properties ===
         // scope: '/', // Defines the navigation scope of the PWA
         // categories: ['lifestyle', 'productivity'], // App categories
