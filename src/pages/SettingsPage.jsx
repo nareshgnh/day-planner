@@ -12,9 +12,11 @@ import {
   LogOut,
 } from "lucide-react";
 import { logOut } from "../utils/auth";
+import { useUiPrefs } from "../hooks/useUiPrefs";
 
 const SettingsPage = ({ exportData, importData, habits = [] }) => {
   const fileInputRef = useRef(null);
+  const { compact, setCompact, showRewards, setShowRewards, showInsight, setShowInsight } = useUiPrefs();
   const [activeTab, setActiveTab] = useState("data");
 
   const handleUpdateHabitReminders = (reminders) => {
@@ -139,3 +141,37 @@ const SettingsPage = ({ exportData, importData, habits = [] }) => {
 };
 
 export default SettingsPage;
+      <Card>
+        <CardHeader>
+          <CardTitle>Display Preferences</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm text-gray-700 dark:text-gray-300">Compact Mode (mobile-friendly)</span>
+            <input
+              type="checkbox"
+              checked={compact}
+              onChange={(e) => setCompact(e.target.checked)}
+              aria-label="Toggle compact mode"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm text-gray-700 dark:text-gray-300">Show Daily Insight</span>
+            <input
+              type="checkbox"
+              checked={showInsight}
+              onChange={(e) => setShowInsight(e.target.checked)}
+              aria-label="Toggle daily insight"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm text-gray-700 dark:text-gray-300">Show Rewards Panel</span>
+            <input
+              type="checkbox"
+              checked={showRewards}
+              onChange={(e) => setShowRewards(e.target.checked)}
+              aria-label="Toggle rewards panel"
+            />
+          </label>
+        </CardContent>
+      </Card>

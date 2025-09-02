@@ -22,6 +22,7 @@ import { calculateGlobalStats } from "../utils/stats";
 import { fetchDailyMotivation } from "../utils/api";
 import { calculateStreakInfo } from "../utils/streakUtils";
 import { Link } from "react-router-dom";
+import { useUiPrefs } from "../hooks/useUiPrefs";
 import {
   Plus,
   Target,
@@ -42,6 +43,7 @@ const DashboardPage = ({
   isLoadingData,
   openOnboarding,
 }) => {
+  const { compact, showRewards, showInsight } = useUiPrefs();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
   const [motivationalMessage, setMotivationalMessage] = useState("");
@@ -197,7 +199,7 @@ const DashboardPage = ({
   }, [isLoadingData, habitLog, loadDailyMotivation]); // useEffect is now defined
 
   return (
-    <div className="flex flex-col gap-6 h-full">
+    <div className={`flex flex-col ${compact ? "gap-4" : "gap-6"} h-full`}>
       {/* Empty State - No habits */}
       {!isLoadingData && habits.length === 0 && (
         <div className="flex-1 flex items-center justify-center min-h-[500px]">
@@ -254,7 +256,7 @@ const DashboardPage = ({
       {!isLoadingData && habits.length > 0 && (
         <>
           {/* Welcome Header - Compact & Elegant */}
-          <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-indigo-100 dark:border-gray-700 shadow-sm">
+          <div className={`bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl ${compact ? "p-4" : "p-6"} border border-indigo-100 dark:border-gray-700 shadow-sm`}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
@@ -276,9 +278,9 @@ const DashboardPage = ({
           </div>
 
           {/* Improved Dashboard Layout */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          <div className={`grid grid-cols-1 xl:grid-cols-4 ${compact ? "gap-4" : "gap-6"}`}>
             {/* Left Main Content - 3/4 width */}
-            <div className="xl:col-span-3 space-y-6">
+            <div className={`xl:col-span-3 ${compact ? "space-y-4" : "space-y-6"}`}>
               {/* Progress Overview - Compact Stats */}
               <GlobalStatsDashboard globalStats={globalStats} />
 
@@ -304,7 +306,7 @@ const DashboardPage = ({
                   </div>
                 </div>
 
-                <CardContent className="p-4">
+                <CardContent className={`${compact ? "p-3" : "p-4"}`}>
                   {habits.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {habits
@@ -382,6 +384,7 @@ const DashboardPage = ({
                     getTileClassName={getTileClassName}
                     selectedHabitIdForStats={selectedHabitIdForStats}
                     onSelectHabitForStats={handleSelectHabitForStats}
+                    compact={compact}
                   />
                 </div>
 
@@ -401,15 +404,17 @@ const DashboardPage = ({
             {/* Right Sidebar - 1/4 width */}
             <div className="xl:col-span-1 space-y-4">
               <div className="sticky top-6 space-y-4">
-                <AiMotivationalMessage
-                  message={motivationalMessage}
-                  isLoading={isMotivationLoading}
-                />
-
-                {/* Rewards Panel - Mobile: full width, Desktop: sidebar */}
-                <div className="xl:block">
-                  <RewardsPanel habits={habits} habitLog={habitLog} />
-                </div>
+                {showInsight && (
+                  <AiMotivationalMessage
+                    message={motivationalMessage}
+                    isLoading={isMotivationLoading}
+                  />
+                )}
+                {showRewards && (
+                  <div className="xl:block">
+                    <RewardsPanel habits={habits} habitLog={habitLog} />
+                  </div>
+                )}
               </div>
             </div>
           </div>

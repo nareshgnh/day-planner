@@ -34,6 +34,7 @@ export const HabitListItem = ({
   onDelete,
   onSelect,
   habitLog, // Add habitLog for streak calculation
+  compact = false,
 }) => {
   // State for streak milestone modal
   const [showMilestoneModal, setShowMilestoneModal] = useState(false);
@@ -221,7 +222,7 @@ export const HabitListItem = ({
   // --- Render ---
   return (
     <li
-      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 ${selectedClass}`}
+      className={`flex flex-col sm:flex-row items-start sm:items-center justify-between ${compact ? "p-2" : "p-3"} rounded-lg border border-gray-200 dark:border-gray-700 gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 ${selectedClass}`}
       onClick={handleSelect}
       role="button"
       tabIndex={0}
@@ -286,7 +287,7 @@ export const HabitListItem = ({
       </div>
 
       {/* Action Area (Right side) */}
-      <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 w-full sm:w-auto justify-end">
+      <div className={`flex items-center ${compact ? "space-x-1" : "space-x-1 sm:space-x-2"} flex-shrink-0 w-full sm:w-auto justify-end`}>
         {/* Conditional Logging UI */}
         {isMeasurable ? (
           // --- UI for Measurable Habits ---

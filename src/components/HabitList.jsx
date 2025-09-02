@@ -85,6 +85,7 @@ export const HabitList = ({
   getTileClassName,
   selectedHabitIdForStats,
   onSelectHabitForStats,
+  compact = false,
 }) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarRef = useRef(null);
@@ -142,7 +143,7 @@ export const HabitList = ({
   }, [isCalendarOpen]);
 
   return (
-    <Card className="bg-white/90 dark:bg-gray-950/90 flex flex-col flex-grow relative">
+    <Card className={`bg-white/90 dark:bg-gray-950/90 flex flex-col flex-grow relative`}>
       <div ref={dateButtonRef}>
         <DatePickerHeader
           selectedDate={selectedDate}
@@ -172,11 +173,11 @@ export const HabitList = ({
 
       {/* *** REVERTED Rendering Logic: Directly map active habits *** */}
       <CardContent
-        className={`flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent px-4 pb-4 sm:px-6 sm:pb-6 pt-0`}
+        className={`flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent ${compact ? "px-3 pb-3" : "px-4 pb-4"} sm:${compact ? "px-4 pb-4" : "px-6 pb-6"} pt-0`}
       >
         {activeHabitsForSelectedDate.length > 0 ? (
           // Render directly as a list without grouping headers
-          <ul className="space-y-3">
+          <ul className={compact ? "space-y-2" : "space-y-3"}>
             {activeHabitsForSelectedDate.map((habit) => (
               <HabitListItem
                 key={habit.id}
@@ -190,6 +191,7 @@ export const HabitList = ({
                 onDelete={handleDeleteHabitCallback}
                 onSelect={onSelectHabitForStats}
                 habitLog={habitLog} // Pass habitLog for streak calculation
+                compact={compact}
               />
             ))}
           </ul>
