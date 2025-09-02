@@ -15,6 +15,9 @@ export const Button = ({
   const base =
     "inline-flex items-center justify-center rounded-[var(--radius-sm)] text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus-visible:focus-ring";
   const variants = {
+    // Back-compat alias: many places pass variant="default"
+    default:
+      "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-600)]",
     primary:
       "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-600)]",
     secondary:
