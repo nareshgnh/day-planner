@@ -40,6 +40,7 @@ const DashboardPage = ({
   handleDeleteHabitCallback,
   updateHabitLog,
   isLoadingData,
+  openOnboarding,
 }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
@@ -212,13 +213,23 @@ const DashboardPage = ({
                   and begin your journey to a better you.
                 </p>
               </div>
-              <Button
-                onClick={openModalForNewHabit}
-                className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg px-8 py-3 text-lg"
-              >
-                <Plus className="mr-2 h-5 w-5" />
-                Create Your First Habit
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={openModalForNewHabit}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg px-8 py-3 text-lg"
+                >
+                  <Plus className="mr-2 h-5 w-5" />
+                  Create Your First Habit
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={openOnboarding}
+                  className="px-8 py-3 text-lg"
+                  aria-label="Open starter templates"
+                >
+                  Browse Starter Templates
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

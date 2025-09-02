@@ -23,7 +23,12 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import { calculateStats } from "../utils/stats";
+import {
+  calculateStats,
+  aggregateCompletionByWeek,
+  aggregateCompletionByMonth,
+  findBestWorstWeek,
+} from "../utils/stats";
 import { formatDate, isHabitScheduledForDate } from "../utils/helpers";
 // import { PersonalBestsPanel } from "../components/PersonalBestsPanel";
 // import { HabitHeatmap } from "../components/HabitHeatmap";
@@ -42,6 +47,7 @@ ChartJS.register(
 
 const AnalyticsPage = ({ habits, habitLog }) => {
   const [activeChallenges, setActiveChallenges] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState("All");
 
   const handleStartChallenge = (challenge) => {
     setActiveChallenges((prev) => [...prev, challenge]);
@@ -78,9 +84,13 @@ const AnalyticsPage = ({ habits, habitLog }) => {
       const dailyCompletionRates = last30Days.map((date) => {
         const dateStr = formatDate(date);
         const dayLog = habitLog[dateStr] || {};
-        const scheduledHabits = habits.filter((h) =>
-          isHabitScheduledForDate(h, date)
-        );
+        const scheduledHabits = habits
+          .filter((h) =>
+            categoryFilter === "All"
+              ? true
+              : (h.category || "Uncategorized") === categoryFilter
+          )
+          .filter((h) => isHabitScheduledForDate(h, date));
 
         if (scheduledHabits.length === 0)
           return { date: dateStr, rate: 0, scheduled: 0 };
@@ -111,6 +121,11 @@ const AnalyticsPage = ({ habits, habitLog }) => {
 
       // Best performing habits
       const habitPerformance = habits
+        .filter((h) =>
+          categoryFilter === "All"
+            ? true
+            : (h.category || "Uncategorized") === categoryFilter
+        )
         .map((habit) => {
           const stats = calculateStats(habit, habitLog);
           const completionRate =
@@ -125,6 +140,21 @@ const AnalyticsPage = ({ habits, habitLog }) => {
         })
         .sort((a, b) => b.completionRate - a.completionRate);
 
+      // Weekly and Monthly aggregates + best/worst weeks (12w/6m)
+      const weeklyAgg = aggregateCompletionByWeek(
+        habits,
+        habitLog,
+        12,
+        categoryFilter === "All" ? null : categoryFilter
+      );
+      const monthlyAgg = aggregateCompletionByMonth(
+        habits,
+        habitLog,
+        6,
+        categoryFilter === "All" ? null : categoryFilter
+      );
+      const bestWorst = findBestWorstWeek(weeklyAgg);
+
       return {
         dailyCompletionRates,
         categoryData,
@@ -132,12 +162,15 @@ const AnalyticsPage = ({ habits, habitLog }) => {
         totalHabits: habits.length,
         activeStreaks: habitPerformance.filter((h) => h.currentStreak > 0)
           .length,
+        weeklyAgg,
+        monthlyAgg,
+        bestWorst,
       };
     } catch (error) {
       console.error("Error calculating analytics:", error);
       return null;
     }
-  }, [habits, habitLog]);
+  }, [habits, habitLog, categoryFilter]);
 
   if (!analytics) {
     return (
@@ -220,15 +253,59 @@ const AnalyticsPage = ({ habits, habitLog }) => {
     ],
   };
 
+  const weeklyChartData = {
+    labels: analytics.weeklyAgg.map((w) => w.weekStart),
+    datasets: [
+      {
+        label: "Weekly Completion %",
+        data: analytics.weeklyAgg.map((w) => Math.round(w.rate)),
+        backgroundColor: "rgba(16, 185, 129, 0.6)",
+        borderColor: "rgba(5, 150, 105, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const monthlyChartData = {
+    labels: analytics.monthlyAgg.map((m) => m.month),
+    datasets: [
+      {
+        label: "Monthly Completion %",
+        data: analytics.monthlyAgg.map((m) => Math.round(m.rate)),
+        backgroundColor: "rgba(99, 102, 241, 0.6)",
+        borderColor: "rgba(67, 56, 202, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-        <LineChart
-          size={28}
-          className="mr-3 text-green-600 dark:text-green-400"
-        />
-        Analytics Dashboard
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+          <LineChart size={28} className="mr-3 text-green-600 dark:text-green-400" />
+          Analytics Dashboard
+        </h2>
+        <div className="flex items-center gap-2">
+          <label htmlFor="analytics-category" className="text-sm text-gray-600 dark:text-gray-400">
+            Category
+          </label>
+          <select
+            id="analytics-category"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="h-9 rounded-md border border-gray-300 bg-white dark:bg-gray-900 dark:border-gray-700 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-50"
+            aria-label="Filter analytics by category"
+          >
+            <option>All</option>
+            {[...new Set((habits || []).map((h) => h.category || "Uncategorized"))].map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* Personal Bests Panel - New motivational section */}
       {/* <PersonalBestsPanel habits={habits} habitLog={habitLog} /> */}
@@ -312,6 +389,53 @@ const AnalyticsPage = ({ habits, habitLog }) => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Weekly Trend */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 size={20} /> Weekly Completion (last 12 weeks)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <Bar
+                data={weeklyChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: (v) => v + '%' } },
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Trend */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 size={20} /> Monthly Completion (last 6 months)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <Bar
+                data={monthlyChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { callback: (v) => v + '%' } },
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
         {/* Completion Trend */}
         <Card>
           <CardHeader>
@@ -405,6 +529,44 @@ const AnalyticsPage = ({ habits, habitLog }) => {
                 }}
               />
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Best/Worst Week Insights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Best Week</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analytics.bestWorst?.best ? (
+              <div className="text-sm">
+                <div className="font-medium">Week of {analytics.bestWorst.best.weekStart}</div>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {Math.round(analytics.bestWorst.best.rate)}% completion ({analytics.bestWorst.best.completed}/{analytics.bestWorst.best.scheduled})
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">Insufficient data</div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Worst Week</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analytics.bestWorst?.worst ? (
+              <div className="text-sm">
+                <div className="font-medium">Week of {analytics.bestWorst.worst.weekStart}</div>
+                <div className="text-gray-600 dark:text-gray-400">
+                  {Math.round(analytics.bestWorst.worst.rate)}% completion ({analytics.bestWorst.worst.completed}/{analytics.bestWorst.worst.scheduled})
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">Insufficient data</div>
+            )}
           </CardContent>
         </Card>
       </div>

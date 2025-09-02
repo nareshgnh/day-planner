@@ -18,7 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 
-const HABIT_TEMPLATES = [
+export const HABIT_TEMPLATES = [
   // Health & Fitness
   {
     id: "drink_water",

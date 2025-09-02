@@ -334,8 +334,15 @@ import {
   GEMINI_API_ENDPOINT,
   ACTION_GENERAL_CHAT,
   ACTION_BATCH_ACTIONS,
+  ACTION_ADD_HABIT,
+  ACTION_DELETE_HABIT,
+  ACTION_COMPLETE_HABIT_DATE,
+  ACTION_SUGGEST_HABITS,
+  ACTION_DELETE_ALL_HABITS,
+  ACTION_COMPLETE_ALL_HABITS_TODAY,
 } from "../constants";
 import { formatDate, parseDate, isHabitScheduledForDate } from "./helpers";
+import { calculateStats } from "./stats";
 
 /**
  * Fetches a motivational suggestion based on *overall* status (original function).
@@ -661,8 +668,17 @@ Respond ONLY with the JSON structure when performing an action. No extra text.
       console.log("Response not valid JSON or parsing failed:", e);
     }
 
-    // Validate parsed JSON structure for actions
+    // Validate parsed JSON structure for actions (whitelisted)
     if (potentialJson) {
+      const allowed = new Set([
+        ACTION_ADD_HABIT,
+        ACTION_DELETE_HABIT,
+        ACTION_COMPLETE_HABIT_DATE,
+        ACTION_SUGGEST_HABITS,
+        ACTION_DELETE_ALL_HABITS,
+        ACTION_COMPLETE_ALL_HABITS_TODAY,
+        ACTION_BATCH_ACTIONS,
+      ]);
       // Handle batch actions specifically
       if (
         potentialJson.action === ACTION_BATCH_ACTIONS &&
@@ -671,7 +687,11 @@ Respond ONLY with the JSON structure when performing an action. No extra text.
         // Basic validation: check if all items in actions array are objects with an 'action' key
         if (
           potentialJson.actions.every(
-            (item) => item && typeof item === "object" && item.action
+            (item) =>
+              item &&
+              typeof item === "object" &&
+              item.action &&
+              allowed.has(item.action)
           )
         ) {
           return potentialJson; // Return valid batch action object
@@ -685,7 +705,11 @@ Respond ONLY with the JSON structure when performing an action. No extra text.
         }
       }
       // Handle single actions
-      else if (typeof potentialJson === "object" && potentialJson.action) {
+      else if (
+        typeof potentialJson === "object" &&
+        potentialJson.action &&
+        allowed.has(potentialJson.action)
+      ) {
         return potentialJson; // Return valid single action object
       }
       // If JSON was parsed but doesn't match expected action structure
@@ -732,28 +756,42 @@ const ENHANCED_AI_COMMANDS = [
 ];
 
 // Example enhanced AI responses:
-export const generateHabitAnalysis = async (habits, habitLog) => {
-  // Analyze patterns and provide insights
-  const analysis = {
-    strongestHabits: habits.filter(
-      (h) => calculateCompletionRate(h, habitLog) > 80
-    ),
-    strugglingHabits: habits.filter(
-      (h) => calculateCompletionRate(h, habitLog) < 50
-    ),
-    optimalTimes: analyzeCompletionTimes(habitLog),
-    suggestions: generatePersonalizedSuggestions(habits, habitLog),
-  };
+export const generateHabitAnalysis = async (habits = [], habitLog = {}) => {
+  // Lightweight, dependency-free analysis using calculateStats
+  const safeHabits = Array.isArray(habits) ? habits : [];
 
-  return analysis;
+  const withStats = safeHabits.map((h) => {
+    const s = calculateStats(h, habitLog);
+    const completionRate =
+      s.totalOpportunities > 0
+        ? (s.totalCompleted / s.totalOpportunities) * 100
+        : 0;
+    return { habit: h, stats: s, completionRate };
+  });
+
+  const strongestHabits = withStats
+    .filter((x) => x.completionRate >= 80)
+    .map((x) => x.habit);
+  const strugglingHabits = withStats
+    .filter((x) => x.completionRate < 50 && x.stats.totalOpportunities > 0)
+    .map((x) => x.habit);
+
+  // Simple timing heuristic: look at logs by hour for measurable/non-measurable
+  // Not enough data here — return placeholder recommending user to review their own patterns
+  const optimalTimes = "Review your own logging times to find patterns (feature stub).";
+
+  // Personalized suggestions: nudge for struggling habits
+  const suggestions = strugglingHabits.map((h) => ({
+    title: `Focus on '${h.title}' this week`,
+    reason: "Low completion rate recently",
+    tip:
+      h.isMeasurable
+        ? "Lower the goal slightly or schedule smaller chunks."
+        : "Tie it to an existing routine (habit stacking).",
+  }));
+
+  return { strongestHabits, strugglingHabits, optimalTimes, suggestions };
 };
 
 // Add voice commands for hands-free habit logging
-export const VOICE_COMMANDS = {
-  "mark [habit] as done": (habitName) => markHabitComplete(habitName, true),
-  "log [number] [unit] for [habit]": (number, unit, habitName) =>
-    logMeasurableHabit(habitName, number),
-  "show my progress": () => showDashboard(),
-  "add new habit [name]": (habitName) => openHabitModal(habitName),
-  "what are my habits for today": () => showTodayHabits(),
-};
+// Voice command hooks removed (not implemented). Add back when handlers exist.

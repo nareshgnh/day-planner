@@ -439,3 +439,119 @@ export const calculateGlobalStats = (habits, habitLog) => {
     worstHabit, // Represents "Needs Focus"
   };
 };
+
+/**
+ * Helpers to aggregate completion by week/month for analytics.
+ */
+const toDateStr = (d) => formatDate(d);
+
+const startOfWeek = (date) => {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 Sun .. 6 Sat
+  const diff = (day + 6) % 7; // days since Monday
+  d.setDate(d.getDate() - diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const startOfMonth = (date) => {
+  const d = new Date(date.getFullYear(), date.getMonth(), 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+export const aggregateCompletionByWeek = (
+  habits,
+  habitLog,
+  weeks = 12,
+  categoryFilter = null
+) => {
+  const today = new Date();
+  const results = [];
+  for (let i = weeks - 1; i >= 0; i--) {
+    const ref = new Date(today);
+    ref.setDate(ref.getDate() - i * 7);
+    const weekStart = startOfWeek(ref);
+    let scheduledTotal = 0;
+    let completedTotal = 0;
+    for (let d = 0; d < 7; d++) {
+      const cur = new Date(weekStart);
+      cur.setDate(weekStart.getDate() + d);
+      const dateStr = toDateStr(cur);
+      const dayLog = habitLog?.[dateStr] || {};
+      const scheduledHabits = (habits || []).filter((h) => {
+        if (categoryFilter && (h.category || "Uncategorized") !== categoryFilter)
+          return false;
+        return isHabitScheduledForDate(h, cur);
+      });
+      const scheduled = scheduledHabits.length;
+      if (scheduled === 0) continue;
+      scheduledTotal += scheduled;
+      scheduledHabits.forEach((habit) => {
+        const status = dayLog[habit.id];
+        const goalMet = habit.isMeasurable
+          ? typeof status === "number" && habit.goal != null && status >= habit.goal
+          : status === true;
+        if (goalMet) completedTotal++;
+      });
+    }
+    results.push({
+      weekStart: toDateStr(weekStart),
+      scheduled: scheduledTotal,
+      completed: completedTotal,
+      rate: scheduledTotal > 0 ? (completedTotal / scheduledTotal) * 100 : 0,
+    });
+  }
+  return results;
+};
+
+export const aggregateCompletionByMonth = (
+  habits,
+  habitLog,
+  months = 6,
+  categoryFilter = null
+) => {
+  const today = new Date();
+  const results = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const ref = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthStart = startOfMonth(ref);
+    const nextMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
+    let scheduledTotal = 0;
+    let completedTotal = 0;
+    for (let cur = new Date(monthStart); cur < nextMonth; cur.setDate(cur.getDate() + 1)) {
+      const dateStr = toDateStr(cur);
+      const dayLog = habitLog?.[dateStr] || {};
+      const scheduledHabits = (habits || []).filter((h) => {
+        if (categoryFilter && (h.category || "Uncategorized") !== categoryFilter)
+          return false;
+        return isHabitScheduledForDate(h, cur);
+      });
+      const scheduled = scheduledHabits.length;
+      if (scheduled === 0) continue;
+      scheduledTotal += scheduled;
+      scheduledHabits.forEach((habit) => {
+        const status = dayLog[habit.id];
+        const goalMet = habit.isMeasurable
+          ? typeof status === "number" && habit.goal != null && status >= habit.goal
+          : status === true;
+        if (goalMet) completedTotal++;
+      });
+    }
+    results.push({
+      month: `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`,
+      scheduled: scheduledTotal,
+      completed: completedTotal,
+      rate: scheduledTotal > 0 ? (completedTotal / scheduledTotal) * 100 : 0,
+    });
+  }
+  return results;
+};
+
+export const findBestWorstWeek = (weeklyAgg) => {
+  const valid = (weeklyAgg || []).filter((w) => w.scheduled > 0);
+  if (valid.length === 0) return { best: null, worst: null };
+  const best = valid.reduce((a, b) => (b.rate > a.rate ? b : a));
+  const worst = valid.reduce((a, b) => (b.rate < a.rate ? b : a));
+  return { best, worst };
+};

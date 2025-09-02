@@ -39,6 +39,7 @@ import { HabitModal } from "./components/HabitModal";
 import { ChatPanel } from "./components/ChatPanel";
 import { BottomNavigation } from "./components/BottomNavigation";
 import { Button } from "./ui/Button";
+import OnboardingModal from "./components/OnboardingModal";
 
 // Pages
 import DashboardPage from "./pages/DashboardPage";
@@ -85,7 +86,13 @@ const initialHabitModalData = {
 };
 
 function App() {
-  const [isDarkMode, toggleDarkMode] = useDarkMode();
+  // Authentication state
+  const [user, setUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  // Use per-user dark mode preference when available
+  const darkModeKey = user ? `darkMode:${user.uid}` : "darkMode";
+  const [isDarkMode, toggleDarkMode] = useDarkMode(darkModeKey);
   const [habits, setHabits] = useState([]);
   const [habitLog, setHabitLog] = useState({});
   const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
@@ -95,6 +102,10 @@ function App() {
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  // Mobile menu state (used by NavItem onClick)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // First-time onboarding
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [pendingActionData, setPendingActionData] = useState(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const [userName, setUserName] = useState("User");
@@ -106,9 +117,7 @@ function App() {
   const [notificationPermission, setNotificationPermission] =
     useState("default");
 
-  // Authentication state
-  const [user, setUser] = useState(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  // (moved user state above)
 
   // Authentication state listener
   useEffect(() => {
@@ -170,6 +179,16 @@ function App() {
       unL();
     };
   }, [user]); // Add user as a dependency
+
+  // Show onboarding if first-time and no habits
+  useEffect(() => {
+    if (!user || isLoadingData) return;
+    const key = `onboardingShown:${user.uid}`;
+    const alreadyShown = localStorage.getItem(key) === "true";
+    if (!alreadyShown && Array.isArray(habits) && habits.length === 0) {
+      setShowOnboarding(true);
+    }
+  }, [user, isLoadingData, habits]);
 
   useEffect(() => {
     if ("Notification" in window)
@@ -420,6 +439,22 @@ function App() {
     setIsChatOpen((p) => !p);
     if (!isChatOpen) setTimeout(() => setFocusChatInput(true), 350);
   }, [isChatOpen]);
+
+  // Onboarding helpers
+  const handleOnboardingClose = useCallback(() => {
+    if (user) localStorage.setItem(`onboardingShown:${user.uid}`, "true");
+    setShowOnboarding(false);
+  }, [user]);
+
+  const handleAddStarterHabits = useCallback(
+    async (habitList) => {
+      const results = await Promise.all(
+        (habitList || []).map((h) => upsertHabit(h))
+      );
+      return results;
+    },
+    [upsertHabit]
+  );
 
   const handleSendChatMessage = useCallback(async () => {
     const msgTxt = chatInput.trim();
@@ -963,6 +998,7 @@ function App() {
                           handleDeleteHabitCallback={handleDeleteHabitCallback}
                           updateHabitLog={updateHabitLog}
                           isLoadingData={isLoadingData}
+                          openOnboarding={() => setShowOnboarding(true)}
                         />
                       }
                     />
@@ -1049,6 +1085,12 @@ function App() {
           habitData={habitModalData}
           onDataChange={setHabitModalData}
           onSave={handleHabitModalSave}
+        />
+
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onClose={handleOnboardingClose}
+          onAddHabits={handleAddStarterHabits}
         />
       </div>
     </Router>
