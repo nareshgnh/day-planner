@@ -46,16 +46,16 @@ const BottomNavigation = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[color-mix(in_oKlab,var(--color-surface)_92%,transparent)] backdrop-blur-lg border-t border-[var(--color-border)] lg:hidden">
       <div className="flex items-center justify-around py-2 px-1 safe-area-padding-bottom">
         {navItems.map(({ to, icon: Icon, label, isActive }) => (
           <NavLink
             key={to}
             to={to}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 min-w-0 flex-1 ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-[var(--radius-sm)] transition-all duration-200 min-w-0 flex-1 ${
               isActive
-                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
-                : "text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                ? "text-[var(--color-primary)] bg-[color-mix(in_oKlab,var(--color-primary)_12%,transparent)]"
+                : "text-[var(--color-text)]/70 hover:text-[var(--color-primary)] hover:bg-[var(--color-surface)]"
             }`}
           >
             <Icon
@@ -65,7 +65,7 @@ const BottomNavigation = () => {
               } transition-transform duration-200`}
             />
             <span
-              className={`text-xs font-medium truncate ${
+              className={`text-xs font-medium tracking-wide truncate ${
                 isActive ? "font-semibold" : ""
               }`}
             >

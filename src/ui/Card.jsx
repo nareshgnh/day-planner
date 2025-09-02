@@ -6,7 +6,7 @@ import React from "react";
  */
 export const Card = ({ children, className = "", ...props }) => (
   <div
-    className={`rounded-xl border border-gray-200 bg-white text-gray-900 shadow dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 ${className}`}
+    className={`card-surface text-[var(--color-text)] ${className}`}
     {...props}
   >
     {children}
@@ -41,10 +41,7 @@ export const CardTitle = ({
 };
 
 export const CardDescription = ({ children, className = "", ...props }) => (
-  <p
-    className={`text-sm text-gray-500 dark:text-gray-400 ${className}`}
-    {...props}
-  >
+  <p className={`text-sm text-[var(--color-muted)] ${className}`} {...props}>
     {children}
   </p>
 );

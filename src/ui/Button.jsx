@@ -6,35 +6,40 @@ import React from "react";
  */
 export const Button = ({
   children,
-  variant = "default",
-  size = "default",
+  variant = "primary",
+  size = "md",
   className = "",
+  block = false,
   ...props
 }) => {
-  const baseStyle =
-    "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+  const base =
+    "inline-flex items-center justify-center rounded-[var(--radius-sm)] text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none focus:outline-none focus-visible:focus-ring";
   const variants = {
-    default:
-      "bg-blue-600 text-white hover:bg-blue-600/90 dark:bg-blue-500 dark:hover:bg-blue-500/90",
-    destructive:
-      "bg-red-600 text-white hover:bg-red-600/90 dark:bg-red-700 dark:hover:bg-red-700/90",
-    outline:
-      "border border-gray-300 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50",
+    primary:
+      "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-600)]",
     secondary:
-      "bg-gray-100 text-gray-900 hover:bg-gray-100/80 dark:bg-gray-800 dark:text-gray-50 dark:hover:bg-gray-800/80",
+      "bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] hover:bg-[var(--color-elevated)]",
+    outline:
+      "border border-[var(--color-border)] bg-transparent text-[var(--color-text)] hover:bg-[var(--color-surface)]",
     ghost:
-      "hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-50",
-    link: "text-blue-600 underline-offset-4 hover:underline dark:text-blue-400",
+      "bg-transparent text-[var(--color-text)] hover:bg-[var(--color-surface)]",
+    destructive:
+      "bg-[var(--color-danger)] text-white hover:bg-[#d12f2f]",
+    soft:
+      "bg-[color-mix(in_oKlab,var(--color-primary)_18%,transparent)] text-[var(--color-text)] hover:bg-[color-mix(in_oKlab,var(--color-primary)_28%,transparent)]",
+    link:
+      "text-[var(--color-primary)] hover:underline bg-transparent",
   };
   const sizes = {
-    default: "h-10 px-4 py-2",
-    sm: "h-9 rounded-md px-3",
-    lg: "h-11 rounded-md px-8",
-    icon: "h-10 w-10", // Default icon size
+    xs: "h-8 px-3 text-xs",
+    sm: "h-9 px-3",
+    md: "h-10 px-4",
+    lg: "h-11 px-5",
+    icon: "h-10 w-10",
   };
   return (
     <button
-      className={`${baseStyle} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`${base} ${variants[variant]} ${sizes[size]} ${block ? "w-full" : ""} ${className}`}
       {...props}
     >
       {children}
