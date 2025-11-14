@@ -43,7 +43,13 @@ const DashboardPage = ({
   isLoadingData,
   openOnboarding,
 }) => {
-  const { compact, showRewards, showInsight } = useUiPrefs();
+  console.log('[DashboardPage] Component rendering');
+  const uiPrefs = useUiPrefs();
+  console.log('[DashboardPage] useUiPrefs returned:', uiPrefs);
+
+  const { compact, showRewards, showInsight } = uiPrefs;
+  console.log('[DashboardPage] Destructured values - compact:', compact, 'showRewards:', showRewards, 'showInsight:', showInsight);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
   const [motivationalMessage, setMotivationalMessage] = useState("");
