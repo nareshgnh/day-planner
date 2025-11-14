@@ -24,6 +24,7 @@ const DatePickerHeader = ({
   onAddHabit,
   isCalendarOpen,
   onToggleCalendar,
+  dateButtonRef, // Add ref as prop
 }) => {
   const today = new Date();
   const isTodaySelected = formatDate(selectedDate) === formatDate(today);
@@ -35,7 +36,7 @@ const DatePickerHeader = ({
   return (
     <div className="relative flex items-center justify-between mb-4 px-4 pt-4 sm:px-6 sm:pt-6 border-b dark:border-gray-700 pb-4">
       <Button
-        ref={useRef()}
+        ref={dateButtonRef}
         variant="ghost"
         className="flex items-center gap-2 p-1 h-auto text-lg font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
         onClick={onToggleCalendar}
@@ -144,15 +145,14 @@ export const HabitList = ({
 
   return (
     <Card className={`bg-white/90 dark:bg-gray-950/90 flex flex-col flex-grow relative`}>
-      <div ref={dateButtonRef}>
-        <DatePickerHeader
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          onAddHabit={openModalForNewHabit}
-          isCalendarOpen={isCalendarOpen}
-          onToggleCalendar={toggleCalendar}
-        />
-      </div>
+      <DatePickerHeader
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        onAddHabit={openModalForNewHabit}
+        isCalendarOpen={isCalendarOpen}
+        onToggleCalendar={toggleCalendar}
+        dateButtonRef={dateButtonRef}
+      />
 
       {isCalendarOpen && (
         <div

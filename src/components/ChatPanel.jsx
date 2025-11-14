@@ -21,6 +21,18 @@ import {
   Sparkles,
 } from "lucide-react";
 
+// Helper function to validate URLs for security
+const isSafeUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  try {
+    const parsed = new URL(url, window.location.href);
+    // Only allow http(s) protocols to prevent javascript: and data: URLs
+    return ["http:", "https:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+};
+
 export const ChatPanel = ({
   isOpen,
   onClose,
@@ -206,14 +218,26 @@ export const ChatPanel = ({
                             {children}
                           </code>
                         ),
-                        a: ({ node, ...props }) => (
-                          <a
-                            {...props}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:underline"
-                          />
-                        ),
+                        a: ({ node, href, ...props }) => {
+                          // Validate URL to prevent XSS
+                          if (!isSafeUrl(href)) {
+                            // Render as plain text if URL is unsafe
+                            return (
+                              <span className="text-gray-500 dark:text-gray-400">
+                                [Invalid Link]
+                              </span>
+                            );
+                          }
+                          return (
+                            <a
+                              {...props}
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline"
+                            />
+                          );
+                        },
                       }}
                     >
                       {msg.text || ""}

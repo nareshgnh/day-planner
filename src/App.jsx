@@ -21,6 +21,7 @@ import {
   orderBy,
   onSnapshot,
   doc,
+  getDoc,
   setDoc,
   deleteDoc,
   updateDoc,
@@ -108,6 +109,7 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [pendingActionData, setPendingActionData] = useState(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [userName, setUserName] = useState("User");
   const recognitionRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
@@ -349,18 +351,28 @@ function App() {
       return;
     }
     const logDocRef = doc(db, "habitLog", dateStr);
-    const logData = { [habitId]: value };
+
     try {
-      if (value === null || value === undefined)
-        await updateDoc(logDocRef, { [habitId]: deleteField() });
-      else await setDoc(logDocRef, logData, { merge: true });
-    } catch (error) {
-      if (
-        !(error.code === "not-found" && (value === null || value === undefined))
-      ) {
-        console.error("[updateHabitLog] Error:", error);
-        alert("Failed to update habit log.");
+      if (value === null || value === undefined) {
+        // Deleting: check if document exists first
+        const docSnap = await getDoc(logDocRef);
+        if (docSnap.exists()) {
+          await updateDoc(logDocRef, { [habitId]: deleteField() });
+        }
+        // If document doesn't exist, that's fine - nothing to delete
+      } else {
+        // Setting value: use setDoc with merge
+        const logData = { [habitId]: value };
+        await setDoc(logDocRef, logData, { merge: true });
       }
+    } catch (error) {
+      console.error("[updateHabitLog] Error:", error, {
+        habitId,
+        dateStr,
+        value,
+      });
+      // Note: Could add toast notification here instead of alert
+      // For now, just log the error - the UI will show the old state
     }
   }, []);
 
@@ -465,6 +477,18 @@ function App() {
     setChatHistory((p) => [...p, userMsg]);
     setChatInput("");
     if (awaitingConfirmation && pendingActionData) {
+      // Prevent multiple confirmations while processing
+      if (isProcessingAction) {
+        setChatHistory((p) => [
+          ...p,
+          {
+            sender: "bot",
+            text: "Please wait, processing your previous confirmation...",
+          },
+        ]);
+        return;
+      }
+
       try {
         const c = lowerMsg;
         let r = "";
@@ -473,6 +497,7 @@ function App() {
         else if (c === "no" || c === "n") r = "Cancelled.";
         else r = `Confirm yes/no. ${pendingActionData.confirmationPrompt}`;
         if (d) {
+          setIsProcessingAction(true);
           try {
             switch (pendingActionData.action) {
               case Actions.ACTION_DELETE_HABIT:
@@ -537,6 +562,7 @@ function App() {
         if (d || c === "no" || c === "n") {
           setPendingActionData(null);
           setAwaitingConfirmation(false);
+          setIsProcessingAction(false);
         } else {
           setAwaitingConfirmation(true);
         }
@@ -548,6 +574,7 @@ function App() {
         ]);
         setPendingActionData(null);
         setAwaitingConfirmation(false);
+        setIsProcessingAction(false);
       } finally {
         if (!(lowerMsg === "no" || lowerMsg === "n"))
           setTimeout(() => setFocusChatInput(true), 0);
@@ -776,46 +803,71 @@ function App() {
     setChatInput,
   ]);
 
-  const setupSpeechRecognition = useCallback(() => {
+  // Setup speech recognition once on mount
+  useEffect(() => {
     const SRA = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SRA) return;
-    const r = new SRA();
-    r.continuous = false;
-    r.interimResults = false;
-    r.lang = "en-US";
-    r.onstart = () => {
+    if (!SRA) {
+      console.warn("Speech Recognition not supported in this browser");
+      return;
+    }
+
+    const recognition = new SRA();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => {
       setIsListening(true);
       setChatInput("Listening...");
     };
-    r.onresult = (e) => {
-      const t = e.results[e.results.length - 1][0].transcript.trim();
-      setChatInput(t);
+
+    recognition.onresult = (e) => {
+      const transcript = e.results[e.results.length - 1][0].transcript.trim();
+      setChatInput(transcript);
     };
-    r.onerror = (e) => {
-      console.error("Speech err:", e.error);
-      let m = `Speech err: ${e.error}`;
-      if (e.error === "not-allowed" || e.error === "service-not-allowed")
-        m = "Microphone access denied.";
-      else if (e.error === "no-speech") m = "No speech detected.";
-      else if (e.error === "audio-capture") m = "Microphone error.";
-      else if (e.error === "network")
-        m = "Network error during speech recognition.";
-      setChatHistory((p) => [...p, { sender: "bot", text: m }]);
+
+    recognition.onerror = (e) => {
+      console.error("Speech error:", e.error);
+      let errorMessage = `Speech error: ${e.error}`;
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        errorMessage = "Microphone access denied. Please enable microphone permissions.";
+      } else if (e.error === "no-speech") {
+        errorMessage = "No speech detected. Please try again.";
+      } else if (e.error === "audio-capture") {
+        errorMessage = "Microphone error. Please check your microphone.";
+      } else if (e.error === "network") {
+        errorMessage = "Network error during speech recognition.";
+      }
+      setChatHistory((prev) => [...prev, { sender: "bot", text: errorMessage }]);
       setIsListening(false);
-      if (chatInputRef.current?.value === "Listening...") setChatInput("");
+      if (chatInputRef.current?.value === "Listening...") {
+        setChatInput("");
+      }
     };
-    r.onend = () => {
+
+    recognition.onend = () => {
       setIsListening(false);
-      if (chatInputRef.current?.value === "Listening...") setChatInput("");
+      if (chatInputRef.current?.value === "Listening...") {
+        setChatInput("");
+      }
       chatInputRef.current?.focus();
     };
-    recognitionRef.current = r;
-  }, [setChatHistory, setChatInput]);
 
-  useEffect(() => {
-    setupSpeechRecognition();
-    return () => recognitionRef.current?.abort();
-  }, [setupSpeechRecognition]);
+    recognitionRef.current = recognition;
+
+    // Cleanup function
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+          recognitionRef.current.abort();
+        } catch (error) {
+          console.error("Error cleaning up speech recognition:", error);
+        }
+        recognitionRef.current = null;
+      }
+    };
+  }, []); // Empty dependency array - setup once only
 
   const handleMicClick = useCallback(() => {
     if (!recognitionRef.current) {
