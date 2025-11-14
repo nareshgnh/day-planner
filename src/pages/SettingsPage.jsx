@@ -16,7 +16,16 @@ import { useUiPrefs } from "../hooks/useUiPrefs";
 
 const SettingsPage = ({ exportData, importData, habits = [] }) => {
   const fileInputRef = useRef(null);
-  const { compact, setCompact, showRewards, setShowRewards, showInsight, setShowInsight } = useUiPrefs();
+  const uiPrefs = useUiPrefs();
+
+  // Use fallback values to ensure variables are always defined
+  const compact = uiPrefs?.compact ?? false;
+  const setCompact = uiPrefs?.setCompact ?? (() => {});
+  const showRewards = uiPrefs?.showRewards ?? false;
+  const setShowRewards = uiPrefs?.setShowRewards ?? (() => {});
+  const showInsight = uiPrefs?.showInsight ?? true;
+  const setShowInsight = uiPrefs?.setShowInsight ?? (() => {});
+
   const [activeTab, setActiveTab] = useState("data");
 
   const handleUpdateHabitReminders = (reminders) => {

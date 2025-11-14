@@ -47,8 +47,12 @@ const DashboardPage = ({
   const uiPrefs = useUiPrefs();
   console.log('[DashboardPage] useUiPrefs returned:', uiPrefs);
 
-  const { compact, showRewards, showInsight } = uiPrefs;
-  console.log('[DashboardPage] Destructured values - compact:', compact, 'showRewards:', showRewards, 'showInsight:', showInsight);
+  // Use fallback values to ensure variables are always defined
+  const compact = uiPrefs?.compact ?? false;
+  const showRewards = uiPrefs?.showRewards ?? false;
+  const showInsight = uiPrefs?.showInsight ?? true;
+
+  console.log('[DashboardPage] Values - compact:', compact, 'showRewards:', showRewards, 'showInsight:', showInsight);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
