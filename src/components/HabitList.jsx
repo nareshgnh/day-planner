@@ -88,8 +88,6 @@ export const HabitList = ({
   onSelectHabitForStats,
   compact = false,
 }) => {
-  console.log('[HabitList] Component rendering with compact:', compact);
-
   // Pre-compute className values to avoid minification issues
   const cardContentPadding = compact ? "px-3 pb-3 sm:px-4 sm:pb-4" : "px-4 pb-4 sm:px-6 sm:pb-6";
   const listSpacing = compact ? "space-y-2" : "space-y-3";

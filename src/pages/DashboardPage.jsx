@@ -43,16 +43,12 @@ const DashboardPage = ({
   isLoadingData,
   openOnboarding,
 }) => {
-  console.log('[DashboardPage] Component rendering');
   const uiPrefs = useUiPrefs();
-  console.log('[DashboardPage] useUiPrefs returned:', uiPrefs);
 
   // Use fallback values to ensure variables are always defined
   const compact = uiPrefs?.compact ?? false;
   const showRewards = uiPrefs?.showRewards ?? false;
   const showInsight = uiPrefs?.showInsight ?? true;
-
-  console.log('[DashboardPage] Values - compact:', compact, 'showRewards:', showRewards, 'showInsight:', showInsight);
 
   // Pre-compute all className values to avoid minification issues
   const containerGap = compact ? "gap-4" : "gap-6";

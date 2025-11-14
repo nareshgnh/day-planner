@@ -4,73 +4,53 @@ import { useEffect, useState } from "react";
 const readBool = (k, fallback) => {
   try {
     const v = localStorage.getItem(k);
-    console.log(`[useUiPrefs] readBool(${k}):`, v, '-> fallback:', fallback);
     if (v === null) return fallback;
     return v === "true";
   } catch (error) {
-    console.error(`[useUiPrefs] readBool(${k}) error:`, error);
     return fallback;
   }
 };
 
 export const useUiPrefs = () => {
-  console.log('[useUiPrefs] Hook called');
-
   // Safe check for window and matchMedia
   let isSmallScreen = false;
   try {
     if (typeof window !== "undefined" && window.matchMedia) {
       isSmallScreen = window.matchMedia("(max-width: 768px)").matches;
-      console.log('[useUiPrefs] isSmallScreen:', isSmallScreen);
     }
   } catch (error) {
-    console.error('[useUiPrefs] Error checking screen size:', error);
+    // Silently fall back to false
   }
 
-  const [isCompactMode, setIsCompactMode] = useState(() => {
-    const value = readBool("ui.compact", isSmallScreen);
-    console.log('[useUiPrefs] Initial isCompactMode state:', value);
-    return value;
-  });
-  const [showRewards, setShowRewards] = useState(() => {
-    const value = readBool("ui.showRewards", false);
-    console.log('[useUiPrefs] Initial showRewards state:', value);
-    return value;
-  });
-  const [showInsight, setShowInsight] = useState(() => {
-    const value = readBool("ui.showInsight", true);
-    console.log('[useUiPrefs] Initial showInsight state:', value);
-    return value;
-  });
+  const [isCompactMode, setIsCompactMode] = useState(() => readBool("ui.compact", isSmallScreen));
+  const [showRewards, setShowRewards] = useState(() => readBool("ui.showRewards", false));
+  const [showInsight, setShowInsight] = useState(() => readBool("ui.showInsight", true));
 
   useEffect(() => {
     try {
       localStorage.setItem("ui.compact", String(isCompactMode));
-      console.log('[useUiPrefs] Saved ui.compact:', isCompactMode);
     } catch (error) {
-      console.error('[useUiPrefs] Error saving ui.compact:', error);
+      // Silently ignore
     }
   }, [isCompactMode]);
 
   useEffect(() => {
     try {
       localStorage.setItem("ui.showRewards", String(showRewards));
-      console.log('[useUiPrefs] Saved ui.showRewards:', showRewards);
     } catch (error) {
-      console.error('[useUiPrefs] Error saving ui.showRewards:', error);
+      // Silently ignore
     }
   }, [showRewards]);
 
   useEffect(() => {
     try {
       localStorage.setItem("ui.showInsight", String(showInsight));
-      console.log('[useUiPrefs] Saved ui.showInsight:', showInsight);
     } catch (error) {
-      console.error('[useUiPrefs] Error saving ui.showInsight:', error);
+      // Silently ignore
     }
   }, [showInsight]);
 
-  const result = {
+  return {
     compact: isCompactMode,
     setCompact: setIsCompactMode,
     showRewards,
@@ -78,8 +58,5 @@ export const useUiPrefs = () => {
     showInsight,
     setShowInsight,
   };
-
-  console.log('[useUiPrefs] Returning:', result);
-  return result;
 };
 
