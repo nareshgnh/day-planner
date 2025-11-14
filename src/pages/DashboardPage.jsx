@@ -54,6 +54,13 @@ const DashboardPage = ({
 
   console.log('[DashboardPage] Values - compact:', compact, 'showRewards:', showRewards, 'showInsight:', showInsight);
 
+  // Pre-compute all className values to avoid minification issues
+  const containerGap = compact ? "gap-4" : "gap-6";
+  const headerPadding = compact ? "p-4" : "p-6";
+  const gridGap = compact ? "gap-4" : "gap-6";
+  const contentSpacing = compact ? "space-y-4" : "space-y-6";
+  const cardPadding = compact ? "p-3" : "p-4";
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
   const [motivationalMessage, setMotivationalMessage] = useState("");
@@ -209,7 +216,7 @@ const DashboardPage = ({
   }, [isLoadingData, habitLog, loadDailyMotivation]); // useEffect is now defined
 
   return (
-    <div className={`flex flex-col ${compact ? "gap-4" : "gap-6"} h-full`}>
+    <div className={`flex flex-col ${containerGap} h-full`}>
       {/* Empty State - No habits */}
       {!isLoadingData && habits.length === 0 && (
         <div className="flex-1 flex items-center justify-center min-h-[500px]">
@@ -266,7 +273,7 @@ const DashboardPage = ({
       {!isLoadingData && habits.length > 0 && (
         <>
           {/* Welcome Header - Compact & Elegant */}
-          <div className={`bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl ${compact ? "p-4" : "p-6"} border border-indigo-100 dark:border-gray-700 shadow-sm`}>
+          <div className={`bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl ${headerPadding} border border-indigo-100 dark:border-gray-700 shadow-sm`}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
@@ -288,9 +295,9 @@ const DashboardPage = ({
           </div>
 
           {/* Improved Dashboard Layout */}
-          <div className={`grid grid-cols-1 xl:grid-cols-4 ${compact ? "gap-4" : "gap-6"}`}>
+          <div className={`grid grid-cols-1 xl:grid-cols-4 ${gridGap}`}>
             {/* Left Main Content - 3/4 width */}
-            <div className={`xl:col-span-3 ${compact ? "space-y-4" : "space-y-6"}`}>
+            <div className={`xl:col-span-3 ${contentSpacing}`}>
               {/* Progress Overview - Compact Stats */}
               <GlobalStatsDashboard globalStats={globalStats} />
 
@@ -316,7 +323,7 @@ const DashboardPage = ({
                   </div>
                 </div>
 
-                <CardContent className={`${compact ? "p-3" : "p-4"}`}>
+                <CardContent className={cardPadding}>
                   {habits.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {habits

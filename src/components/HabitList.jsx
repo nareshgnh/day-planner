@@ -90,6 +90,10 @@ export const HabitList = ({
 }) => {
   console.log('[HabitList] Component rendering with compact:', compact);
 
+  // Pre-compute className values to avoid minification issues
+  const cardContentPadding = compact ? "px-3 pb-3 sm:px-4 sm:pb-4" : "px-4 pb-4 sm:px-6 sm:pb-6";
+  const listSpacing = compact ? "space-y-2" : "space-y-3";
+
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarRef = useRef(null);
   const dateButtonRef = useRef(null);
@@ -175,13 +179,11 @@ export const HabitList = ({
 
       {/* *** REVERTED Rendering Logic: Directly map active habits *** */}
       <CardContent
-        className={`flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent ${
-          compact ? "px-3 pb-3 sm:px-4 sm:pb-4" : "px-4 pb-4 sm:px-6 sm:pb-6"
-        } pt-0`}
+        className={`flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent ${cardContentPadding} pt-0`}
       >
         {activeHabitsForSelectedDate.length > 0 ? (
           // Render directly as a list without grouping headers
-          <ul className={compact ? "space-y-2" : "space-y-3"}>
+          <ul className={listSpacing}>
             {activeHabitsForSelectedDate.map((habit) => (
               <HabitListItem
                 key={habit.id}
