@@ -29,7 +29,10 @@ export const calculateStreakInfo = (habit, habitLog) => {
       if (date) {
         const status = dayLog[habit.id];
         const isCompleted = habit.isMeasurable
-          ? typeof status === "number" && habit.goal && status >= habit.goal
+          ? typeof status === "number" &&
+            habit.goal !== null &&
+            habit.goal !== undefined &&
+            status >= habit.goal
           : status === true;
 
         logs.push({
