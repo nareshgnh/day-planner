@@ -27,9 +27,9 @@ export const useUiPrefs = () => {
     console.error('[useUiPrefs] Error checking screen size:', error);
   }
 
-  const [compact, setCompact] = useState(() => {
+  const [isCompactMode, setIsCompactMode] = useState(() => {
     const value = readBool("ui.compact", isSmallScreen);
-    console.log('[useUiPrefs] Initial compact state:', value);
+    console.log('[useUiPrefs] Initial isCompactMode state:', value);
     return value;
   });
   const [showRewards, setShowRewards] = useState(() => {
@@ -45,12 +45,12 @@ export const useUiPrefs = () => {
 
   useEffect(() => {
     try {
-      localStorage.setItem("ui.compact", String(compact));
-      console.log('[useUiPrefs] Saved ui.compact:', compact);
+      localStorage.setItem("ui.compact", String(isCompactMode));
+      console.log('[useUiPrefs] Saved ui.compact:', isCompactMode);
     } catch (error) {
       console.error('[useUiPrefs] Error saving ui.compact:', error);
     }
-  }, [compact]);
+  }, [isCompactMode]);
 
   useEffect(() => {
     try {
@@ -71,8 +71,8 @@ export const useUiPrefs = () => {
   }, [showInsight]);
 
   const result = {
-    compact,
-    setCompact,
+    compact: isCompactMode,
+    setCompact: setIsCompactMode,
     showRewards,
     setShowRewards,
     showInsight,
