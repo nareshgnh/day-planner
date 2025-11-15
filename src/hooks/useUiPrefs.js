@@ -22,41 +22,40 @@ export const useUiPrefs = () => {
     // Silently fall back to false
   }
 
-  const [isCompactMode, setIsCompactMode] = useState(() => readBool("ui.compact", isSmallScreen));
-  const [showRewards, setShowRewards] = useState(() => readBool("ui.showRewards", false));
-  const [showInsight, setShowInsight] = useState(() => readBool("ui.showInsight", true));
+  const [compactViewEnabled, setCompactViewEnabled] = useState(() => readBool("ui.compact", isSmallScreen));
+  const [rewardsVisible, setRewardsVisible] = useState(() => readBool("ui.showRewards", false));
+  const [insightVisible, setInsightVisible] = useState(() => readBool("ui.showInsight", true));
 
   useEffect(() => {
     try {
-      localStorage.setItem("ui.compact", String(isCompactMode));
+      localStorage.setItem("ui.compact", String(compactViewEnabled));
     } catch (error) {
       // Silently ignore
     }
-  }, [isCompactMode]);
+  }, [compactViewEnabled]);
 
   useEffect(() => {
     try {
-      localStorage.setItem("ui.showRewards", String(showRewards));
+      localStorage.setItem("ui.showRewards", String(rewardsVisible));
     } catch (error) {
       // Silently ignore
     }
-  }, [showRewards]);
+  }, [rewardsVisible]);
 
   useEffect(() => {
     try {
-      localStorage.setItem("ui.showInsight", String(showInsight));
+      localStorage.setItem("ui.showInsight", String(insightVisible));
     } catch (error) {
       // Silently ignore
     }
-  }, [showInsight]);
+  }, [insightVisible]);
 
   return {
-    compact: isCompactMode,
-    setCompact: setIsCompactMode,
-    showRewards,
-    setShowRewards,
-    showInsight,
-    setShowInsight,
+    compact: compactViewEnabled,
+    setCompact: setCompactViewEnabled,
+    showRewards: rewardsVisible,
+    setShowRewards: setRewardsVisible,
+    showInsight: insightVisible,
+    setShowInsight: setInsightVisible,
   };
 };
-

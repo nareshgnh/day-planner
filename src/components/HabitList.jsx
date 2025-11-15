@@ -24,7 +24,7 @@ const DatePickerHeader = ({
   onAddHabit,
   isCalendarOpen,
   onToggleCalendar,
-  dateButtonRef, // Add ref as prop
+  dateButtonRef,
 }) => {
   const today = new Date();
   const isTodaySelected = formatDate(selectedDate) === formatDate(today);
@@ -78,7 +78,6 @@ export const HabitList = ({
   habitLog,
   selectedDate,
   setSelectedDate,
-  // *** CORRECTED PROP NAME: Expect `updateHabitLog` from App.jsx ***
   updateHabitLog,
   openModalForEditHabit,
   handleDeleteHabitCallback,
@@ -88,14 +87,14 @@ export const HabitList = ({
   onSelectHabitForStats,
   compact = false,
 }) => {
-  // Pre-compute className values to avoid minification issues
-  const cardContentPadding = compact ? "px-3 pb-3 sm:px-4 sm:pb-4" : "px-4 pb-4 sm:px-6 sm:pb-6";
-  const listSpacing = compact ? "space-y-2" : "space-y-3";
+  // Pre-compute className values with descriptive variable names
+  const isCompactViewMode = compact;
+  const cardContentPadding = isCompactViewMode ? "px-3 pb-3 sm:px-4 sm:pb-4" : "px-4 pb-4 sm:px-6 sm:pb-6";
+  const listSpacing = isCompactViewMode ? "space-y-2" : "space-y-3";
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarRef = useRef(null);
   const dateButtonRef = useRef(null);
-  // *** REMOVED expandedCategories state ***
 
   const selectedDateStr = useMemo(
     () => formatDate(selectedDate),
@@ -110,8 +109,6 @@ export const HabitList = ({
     );
   }, [habits, selectedDate]);
 
-  // *** REMOVED groupedHabits useMemo ***
-
   const selectedDayLog = useMemo(
     () => habitLog[selectedDateStr] || {},
     [habitLog, selectedDateStr]
@@ -121,7 +118,6 @@ export const HabitList = ({
     () => setIsCalendarOpen((prev) => !prev),
     []
   );
-  // *** REMOVED toggleCategory useCallback ***
 
   const handleInlineDateSelect = useCallback(
     (newDate) => {
@@ -175,12 +171,10 @@ export const HabitList = ({
         </div>
       )}
 
-      {/* *** REVERTED Rendering Logic: Directly map active habits *** */}
       <CardContent
         className={`flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent ${cardContentPadding} pt-0`}
       >
         {activeHabitsForSelectedDate.length > 0 ? (
-          // Render directly as a list without grouping headers
           <ul className={listSpacing}>
             {activeHabitsForSelectedDate.map((habit) => (
               <HabitListItem
@@ -189,13 +183,12 @@ export const HabitList = ({
                 logStatus={selectedDayLog[habit.id]}
                 selectedDate={selectedDate}
                 isSelected={habit.id === selectedHabitIdForStats}
-                // *** CORRECTED PROP PASSED DOWN ***
-                updateHabitLog={updateHabitLog} // Pass the function received from App.jsx
+                updateHabitLog={updateHabitLog}
                 onEdit={openModalForEditHabit}
                 onDelete={handleDeleteHabitCallback}
                 onSelect={onSelectHabitForStats}
-                habitLog={habitLog} // Pass habitLog for streak calculation
-                compact={compact}
+                habitLog={habitLog}
+                compact={isCompactViewMode}
               />
             ))}
           </ul>

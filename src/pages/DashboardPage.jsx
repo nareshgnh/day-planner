@@ -46,16 +46,16 @@ const DashboardPage = ({
   const uiPrefs = useUiPrefs();
 
   // Use fallback values to ensure variables are always defined
-  const compact = uiPrefs?.compact ?? false;
-  const showRewards = uiPrefs?.showRewards ?? false;
-  const showInsight = uiPrefs?.showInsight ?? true;
+  const isCompactViewMode = uiPrefs?.compact ?? false;
+  const areRewardsVisible = uiPrefs?.showRewards ?? false;
+  const isInsightVisible = uiPrefs?.showInsight ?? true;
 
   // Pre-compute all className values to avoid minification issues
-  const containerGap = compact ? "gap-4" : "gap-6";
-  const headerPadding = compact ? "p-4" : "p-6";
-  const gridGap = compact ? "gap-4" : "gap-6";
-  const contentSpacing = compact ? "space-y-4" : "space-y-6";
-  const cardPadding = compact ? "p-3" : "p-4";
+  const containerGap = isCompactViewMode ? "gap-4" : "gap-6";
+  const headerPadding = isCompactViewMode ? "p-4" : "p-6";
+  const gridGap = isCompactViewMode ? "gap-4" : "gap-6";
+  const contentSpacing = isCompactViewMode ? "space-y-4" : "space-y-6";
+  const cardPadding = isCompactViewMode ? "p-3" : "p-4";
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHabitIdForStats, setSelectedHabitIdForStats] = useState(null);
@@ -189,7 +189,7 @@ const DashboardPage = ({
         setMotivationalMessage(msg);
       } else {
         setMotivationalMessage(
-          "No habits scheduled today. Ready to plan for tomorrow?"
+          "No habits scheduled today. Ready to plan ahead?"
         );
       }
     } catch (e) {
@@ -209,7 +209,7 @@ const DashboardPage = ({
         previousTodaysLogRef.current = currentLogJSON;
       }
     }
-  }, [isLoadingData, habitLog, loadDailyMotivation]); // useEffect is now defined
+  }, [isLoadingData, habitLog, loadDailyMotivation]);
 
   return (
     <div className={`flex flex-col ${containerGap} h-full`}>
@@ -397,7 +397,7 @@ const DashboardPage = ({
                     getTileClassName={getTileClassName}
                     selectedHabitIdForStats={selectedHabitIdForStats}
                     onSelectHabitForStats={handleSelectHabitForStats}
-                    compact={compact}
+                    compact={isCompactViewMode}
                   />
                 </div>
 
@@ -417,13 +417,13 @@ const DashboardPage = ({
             {/* Right Sidebar - 1/4 width */}
             <div className="xl:col-span-1 space-y-4">
               <div className="sticky top-6 space-y-4">
-                {showInsight && (
+                {isInsightVisible && (
                   <AiMotivationalMessage
                     message={motivationalMessage}
                     isLoading={isMotivationLoading}
                   />
                 )}
-                {showRewards && (
+                {areRewardsVisible && (
                   <div className="xl:block">
                     <RewardsPanel habits={habits} habitLog={habitLog} />
                   </div>
